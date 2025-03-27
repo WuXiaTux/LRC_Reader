@@ -1,6 +1,6 @@
-[中文](https://github.com/WuXiaTux/LRC_Reader/README.md) [English](https://github.com/WuXiaTux/LRC_Reader/README_ENGLISH.md)
+[中文](https://github.com/WuXiaTux/LRC_Reader/README.md) [English]https://github.com/WuXiaTux/LRC_Reader/blob/main/README_ENGLISH.md
 
-#### The English skill of me is not good,so if you find some grammar mistake or something you can't understand,please use translation software to translate the chinese version of this readme.<br><br>
+### The English skill of me is not good,so if you find some grammar mistake or something you can't understand,please use translation software to translate the chinese version of this readme.<br><br>
 ### The systems and languages of this software:<br>
 This software only support Windows7 and upgrader Windows system,support 32 or 64 base system,and it only support Chinese and English.<br>
 ### This information of this software:<br>
