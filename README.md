@@ -14,4 +14,4 @@
 4.这是我使用的编译选项：<br>
 g++.exe -c main.cpp -o main.o   -O2 -pipe -lwinmm -std=c++17 -lComdlg32  -finput-charset=UTF-8 -fexec-charset=gbk <br>
 windres.exe -i v3_private.rc --input-format=rc -o v3_private.res -O coff <br>
-g++.exe main.o v3_private.res -o v3.0.exe -mwindows -s -mwindows -lgraphics -luuid -lmsimg32 -lgdi32 -limm32 -lole32 -loleaut32 -lwinmm -lgdiplus -static <br>
+g++.exe main.o v3_private.res -o v3.0.exe -mwindows -s -mwindows -lgraphics -luuid -lmsimg32 -lgdi32 -limm32 -lole32 -loleaut32 -lwinmm -lgdiplus -static 
