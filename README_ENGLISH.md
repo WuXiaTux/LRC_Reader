@@ -1,4 +1,4 @@
-[中文](https://github.com/WuXiaTux/LRC_Reader/README.md) [English](https://github.com/WuXiaTux/LRC_Reader/blob/main/README_ENGLISH.md)
+[中文](https://github.com/WuXiaTux/LRC_Reader/blob/main/README.md) [English](https://github.com/WuXiaTux/LRC_Reader/blob/main/README_ENGLISH.md)
 
 ### The English skill of me is not good,so if you find some grammar mistake or something you can't understand,please use translation software to translate the chinese version of this readme.<br><br>
 ### The systems and languages of this software:<br>
