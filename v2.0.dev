@@ -1,0 +1,96 @@
+[Project]
+filename = v2.0.dev
+name = v2.0
+UnitCount = 1
+Type = 0
+Ver = 3
+Includes = 
+Libs = 
+Bins = 
+ResourceIncludes = 
+MakeIncludes = 
+PrivateResource = v2_private.rc
+Compiler = 
+CppCompiler = 
+Linker = -lgraphics -luuid -lmsimg32 -lgdi32 -limm32 -lole32 -loleaut32 -lwinmm -lgdiplus_@@__@@_
+ResourceCommand = 
+IsCpp = 1
+Icon = app.ico
+ExeOutput = 
+ObjectOutput = 
+LogOutput = 
+LogOutputEnabled = 0
+OverrideOutput = 0
+OverrideOutputName = 
+HostApplication = 
+UseCustomMakefile = 0
+CustomMakefile = 
+UsePrecompiledHeader = 0
+PrecompiledHeader = 
+CommandLine = 
+Folders = 
+IncludeVersionInfo = 1
+SupportXPThemes = 0
+CompilerSet = 0
+StaticLink = 1
+AddCharset = 1
+ExecEncoding = SYSTEM
+Encoding = UTF-8
+ModelType = 0
+ClassBrowserType = 0
+AllowParallelBuilding = false
+ParellelBuildingJobs = 0
+UseUTF8 = 1
+
+
+[Unit1]
+FileName = LRC阅读器.cpp
+CompileCpp = 1
+Folder = 源文件
+Compile = 1
+Link = 1
+Priority = 1000
+OverrideBuildCmd = 0
+BuildCmd = 
+FileEncoding = PROJECT
+RealEncoding = UTF-8
+
+
+[VersionInfo]
+Major = 2
+Minor = 0
+Release = 0
+Build = 0
+LanguageID = 2052
+CharsetID = 1252
+CompanyName = 武侠Tux
+FileVersion = 2.0.0.0
+FileDescription = 让音乐播放器支持观看TXT文件的工具
+InternalName = 
+LegalCopyright = Copyright 2024 武侠Tux. All rights reserved.
+LegalTrademarks = 
+OriginalFilename = LRC阅读器
+ProductName = LRC阅读器
+ProductVersion = 2.0.0.0
+AutoIncBuildNr = 0
+SyncProduct = 1
+
+
+[Unit2]
+FileName = restart.cpp
+CompileCpp = 1
+Folder = 源文件
+Compile = 1
+Link = 1
+Priority = 1000
+OverrideBuildCmd = 0
+BuildCmd = 
+FileEncoding = PROJECT
+RealEncoding = UTF-8
+
+
+[CompilerSettings]
+cc_cmd_opt_optimize = 2
+cc_cmd_opt_std = 
+cc_cmd_opt_use_pipe = on
+link_cmd_opt_strip_exe = on

@@ -1,0 +1,35 @@
+# Project: v2.0
+# Makefile created by Red Panda C++ 2.25.1
+
+CPP      = g++.exe
+CC       = gcc.exe
+WINDRES  = windres.exe
+RES      = v2_private.res
+OBJ      = LRCÔÄ¶ÁÆ÷.o $(RES)
+LINKOBJ  = LRCÔÄ¶ÁÆ÷.o v2_private.res
+CLEANOBJ  =  LRCÔÄ¶ÁÆ÷.o  v2_private.res v2.0.exe
+LIBS     =  -s -mwindows -lgraphics -luuid -lmsimg32 -lgdi32 -limm32 -lole32 -loleaut32 -lwinmm -lgdiplus   -static
+INCS     =  
+CXXINCS  =  
+BIN      = v2.0.exe
+CXXFLAGS = $(CXXINCS)  -O2 -pipe -lwinmm -std=c++11 -lComdlg32
+CFLAGS   = $(INCS)  -O2 -pipe -lwinmm -std=c++11 -lComdlg32
+RM       = del /q /f
+WINDRESFLAGS  = 
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before $(BIN) all-after
+
+clean: clean-custom
+	-$(RM) $(CLEANOBJ) > NUL 2>&1
+
+$(BIN): $(OBJ)
+	$(CPP) $(LINKOBJ) -o $(BIN) $(LIBS)
+
+LRCÔÄ¶ÁÆ÷.o: LRCÔÄ¶ÁÆ÷.cpp
+	$(CPP) -c LRCÔÄ¶ÁÆ÷.cpp -o LRCÔÄ¶ÁÆ÷.o $(CXXFLAGS)  -finput-charset=UTF-8 -fexec-charset=gbk
+
+v2_private.res: v2_private.rc 
+	$(WINDRES) -i v2_private.rc --input-format=rc -o v2_private.res -O coff $(WINDRESFLAGS) 
+
