@@ -1,6 +1,6 @@
 [中文](https://github.com/WuXiaTux/LRC_Reader/blob/main/README.md) [English](https://github.com/WuXiaTux/LRC_Reader/blob/main/README_ENGLISH.md)
 
-##注：这个README是针对v3.0实现的功能而写的，2.2暂时还有一些功能未实现，请注意下面的备注！<br><br>
+## 注：这个README是针对v3.0实现的功能而写的，2.2暂时还有一些功能未实现，请注意下面的备注！<br><br>
 
 ### 本软件支持的系统和软件：<br>
 本软件目前仅支持Windows7及其以上Windows版本，支持32位和64位系统，仅支持中文和英文。（2.2仅支持中文）<br><br>
