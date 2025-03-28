@@ -4,7 +4,7 @@
 ## This README is written for version 3.0,so there are some functions don't implemented in version 2.2,please check out the annotations below.<br><br>
 ### The systems and languages of this software:<br>
 This software only support Windows7 and upgrader Windows system,support 32-bit or 64-bit system,and it only support Chinese and English.(v2.2 don't support English.)<br>
-### This information of this software:<br>
+### The details of this software:<br>
 1.change TXT file to LRC file,and create MP3 file according to the line numbers of the TXT file.<br>
 (1)File Separation Mode:Separate TXT file into 500 lines,and create corresponding MP3 file.<br>
 2.using ascii-image-converter change picture file to LRC and MP3 file combination,to display ASCII picture.<br>
