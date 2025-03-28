@@ -1,19 +1,19 @@
-# Project: v2.0
+# Project: v2.2
 # Makefile created by Red Panda C++ 2.25.1
 
 CPP      = g++.exe
 CC       = gcc.exe
 WINDRES  = windres.exe
 RES      = v2_private.res
-OBJ      = LRCÔÄ¶ÁÆ÷.o $(RES)
-LINKOBJ  = LRCÔÄ¶ÁÆ÷.o v2_private.res
-CLEANOBJ  =  LRCÔÄ¶ÁÆ÷.o  v2_private.res v2.0.exe
-LIBS     =  -s -mwindows -lgraphics -luuid -lmsimg32 -lgdi32 -limm32 -lole32 -loleaut32 -lwinmm -lgdiplus   -static
+OBJ      = main.o $(RES)
+LINKOBJ  = main.o v2_private.res
+CLEANOBJ  =  main.o  v2_private.res v2.2.exe
+LIBS     =  -mwindows -s -mwindows -lgraphics -luuid -lmsimg32 -lgdi32 -limm32 -lole32 -loleaut32 -lwinmm -lgdiplus   -static
 INCS     =  
 CXXINCS  =  
-BIN      = v2.0.exe
-CXXFLAGS = $(CXXINCS)  -O2 -pipe -lwinmm -std=c++11 -lComdlg32
-CFLAGS   = $(INCS)  -O2 -pipe -lwinmm -std=c++11 -lComdlg32
+BIN      = v2.2.exe
+CXXFLAGS = $(CXXINCS)  -O2 -pipe -lwinmm -std=c++17 -lComdlg32
+CFLAGS   = $(INCS)  -O2 -pipe -lwinmm -std=c++17 -lComdlg32
 RM       = del /q /f
 WINDRESFLAGS  = 
 
@@ -27,8 +27,8 @@ clean: clean-custom
 $(BIN): $(OBJ)
 	$(CPP) $(LINKOBJ) -o $(BIN) $(LIBS)
 
-LRCÔÄ¶ÁÆ÷.o: LRCÔÄ¶ÁÆ÷.cpp
-	$(CPP) -c LRCÔÄ¶ÁÆ÷.cpp -o LRCÔÄ¶ÁÆ÷.o $(CXXFLAGS)  -finput-charset=UTF-8 -fexec-charset=gbk
+main.o: main.cpp
+	$(CPP) -c main.cpp -o main.o $(CXXFLAGS)  -finput-charset=UTF-8 -fexec-charset=gbk
 
 v2_private.res: v2_private.rc 
 	$(WINDRES) -i v2_private.rc --input-format=rc -o v2_private.res -O coff $(WINDRESFLAGS) 

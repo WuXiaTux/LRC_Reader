@@ -1,6 +1,6 @@
 [Project]
-filename = v2.0.dev
-name = v2.0
+filename = v2.2.dev
+name = v2.2
 UnitCount = 1
 Type = 0
 Ver = 3
@@ -44,7 +44,7 @@ UseUTF8 = 1
 
 
 [Unit1]
-FileName = LRC阅读器.cpp
+FileName = main.cpp
 CompileCpp = 1
 Folder = 源文件
 Compile = 1
@@ -58,39 +58,41 @@ RealEncoding = UTF-8
 
 [VersionInfo]
 Major = 2
-Minor = 0
+Minor = 2
 Release = 0
 Build = 0
 LanguageID = 2052
 CharsetID = 1252
 CompanyName = 武侠Tux
-FileVersion = 2.0.0.0
+FileVersion = 2.2.0.0
 FileDescription = 让音乐播放器支持观看TXT文件的工具
 InternalName = 
-LegalCopyright = Copyright 2024 武侠Tux. All rights reserved.
+LegalCopyright = Copyright 2025 武侠Tux. All right reserved.
 LegalTrademarks = 
-OriginalFilename = LRC阅读器
+OriginalFilename = LRC阅读器.exe
 ProductName = LRC阅读器
-ProductVersion = 2.0.0.0
+ProductVersion = 2.2.0.0
 AutoIncBuildNr = 0
 SyncProduct = 1
 
 
-[Unit2]
-FileName = restart.cpp
-CompileCpp = 1
-Folder = 源文件
-Compile = 1
-Link = 1
-Priority = 1000
-OverrideBuildCmd = 0
-BuildCmd = 
-FileEncoding = PROJECT
-RealEncoding = UTF-8
-
-
 [CompilerSettings]
+c_cmd_opt_std = 
+cc_cmd_opt_abort_on_error = 
+cc_cmd_opt_check_iso_conformance = 
+cc_cmd_opt_debug_info = 
+cc_cmd_opt_inhibit_all_warning = 
+cc_cmd_opt_instruction = 
 cc_cmd_opt_optimize = 2
+cc_cmd_opt_pointer_size = 
+cc_cmd_opt_profile_info = 
+cc_cmd_opt_stack_protector = 
 cc_cmd_opt_std = 
+cc_cmd_opt_syntax_only = 
 cc_cmd_opt_use_pipe = on
+cc_cmd_opt_warning_all = 
+cc_cmd_opt_warning_as_error = 
+cc_cmd_opt_warning_extra = 
+link_cmd_opt_no_console = on
+link_cmd_opt_no_link_stdlib = 
 link_cmd_opt_strip_exe = on
