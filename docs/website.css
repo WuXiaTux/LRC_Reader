@@ -1,0 +1,106 @@
+:root {
+    --primary: #2c3e50;
+    --secondary: #3498db;
+    --hover: #2980b9;
+    --text: #2c3e50;
+    --bg: #f8f9fa;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+}
+
+.language-switcher {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+.language-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--primary);
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.container {
+    max-width: 800px;
+    margin: 100px auto;
+    padding: 0 20px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 30px;
+    color: var(--primary);
+}
+
+.description {
+    font-size: 1.1rem;
+    margin: 40px 0;
+    color: #666;
+}
+
+.button-container {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 50px;
+}
+
+.btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: white;
+}
+
+.github { background: #6e5494; }
+.download { background: #3498db; }
+.bilibili { background: #fb7299; }
+.youtube { background: #ff0000; }
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.github:hover { background: #5b3f7a; }
+.download:hover { background: #2980b9; }
+.bilibili:hover { background: #e65a8a; }
+.youtube:hover { background: #cc0000; }
+
+@media (max-width: 768px) {
+    .container {
+        margin: 60px auto;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .button-container {
+        flex-direction: column;
+    }
+}
