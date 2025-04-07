@@ -1,17 +1,17 @@
-# Project: v2.2
+# Project: v3.0
 # Makefile created by Red Panda C++ 2.25.1
 
 CPP      = g++.exe
 CC       = gcc.exe
 WINDRES  = windres.exe
-RES      = v2_private.res
+RES      = v3_private.res
 OBJ      = main.o $(RES)
-LINKOBJ  = main.o v2_private.res
-CLEANOBJ  =  main.o  v2_private.res v2.2.exe
+LINKOBJ  = main.o v3_private.res
+CLEANOBJ  =  main.o  v3_private.res v3.0.exe
 LIBS     =  -mwindows -s -mwindows -lgraphics -luuid -lmsimg32 -lgdi32 -limm32 -lole32 -loleaut32 -lwinmm -lgdiplus   -static
 INCS     =  
 CXXINCS  =  
-BIN      = v2.2.exe
+BIN      = v3.0.exe
 CXXFLAGS = $(CXXINCS)  -O2 -pipe -lwinmm -std=c++17 -lComdlg32
 CFLAGS   = $(INCS)  -O2 -pipe -lwinmm -std=c++17 -lComdlg32
 RM       = del /q /f
@@ -30,6 +30,6 @@ $(BIN): $(OBJ)
 main.o: main.cpp
 	$(CPP) -c main.cpp -o main.o $(CXXFLAGS)  -finput-charset=UTF-8 -fexec-charset=gbk
 
-v2_private.res: v2_private.rc 
-	$(WINDRES) -i v2_private.rc --input-format=rc -o v2_private.res -O coff $(WINDRESFLAGS) 
+v3_private.res: v3_private.rc 
+	$(WINDRES) -i v3_private.rc --input-format=rc -o v3_private.res -O coff $(WINDRESFLAGS) 
 
