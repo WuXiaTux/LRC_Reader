@@ -35,6 +35,10 @@
 }
 
 body {
+    background-image: url('1.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     background-color: var(--bg);
     color: var(--text);
     line-height: 1.6;
