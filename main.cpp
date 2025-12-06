@@ -4,22 +4,22 @@
 #include <math.h>		  // 数学函数库
 #include <iostream>		  // 标准输入输出流
 #include <windows.h>	  // Windows API：用于文件对话框、消息框、系统调用等
-#include <fstream>        // 文件流：用于读写TXT、LRC、PAK等文件
-#include <vector>         // 向量容器：用于动态存储字符串数组
-#include <string>         // 字符串类
-#include <cstring>        // C风格字符串处理
-#include <algorithm>      // 算法库：用于transform等操作
-#include <cstdio>         // 标准I/O
-#include <random>         // 随机数（代码中未深度使用，可能是保留库）
-#include <chrono>         // 时间库
-#include <sstream>        // 字符串流：用于格式化时间戳
-#include <iomanip>        // I/O操纵符：用于设置输出格式（如补零）
-#include <direct.h>       // 目录操作：如_mkdir等
-#include <commdlg.h>      // 公共对话框：用于打开文件选择窗口
-#include <tchar.h>        // 字符映射
-#include <filesystem>     // C++17 文件系统库：用于路径和文件检查
-#include <locale.h>       // 本地化设置
-#include <Shlwapi.h>      // Shell轻量级API
+#include <fstream>		  // 文件流：用于读写TXT、LRC、PAK等文件
+#include <vector>		  // 向量容器：用于动态存储字符串数组
+#include <string>		  // 字符串类
+#include <cstring>		  // C风格字符串处理
+#include <algorithm>	  // 算法库：用于transform等操作
+#include <cstdio>		  // 标准I/O
+#include <random>		  // 随机数（代码中未深度使用，可能是保留库）
+#include <chrono>		  // 时间库
+#include <sstream>		  // 字符串流：用于格式化时间戳
+#include <iomanip>		  // I/O操纵符：用于设置输出格式（如补零）
+#include <direct.h>		  // 目录操作：如_mkdir等
+#include <commdlg.h>	  // 公共对话框：用于打开文件选择窗口
+#include <tchar.h>		  // 字符映射
+#include <filesystem>	  // C++17 文件系统库：用于路径和文件检查
+#include <locale.h>		  // 本地化设置
+#include <Shlwapi.h>	  // Shell轻量级API
 
 // 定义命名空间，省去std::和filesystem::前缀
 using namespace std;
@@ -28,18 +28,18 @@ using namespace filesystem;
 // ---------------------------------------------------------
 // 全局变量定义
 // ---------------------------------------------------------
-string str1 = "ffmpeg -stream_loop "; // ffmpeg命令前缀，用于循环流
-string txt_path, txt_name;			  // txt_path: 用户选择的TXT绝对路径, txt_name: 提取出的文件名
-string mp3_out, str2;				  // mp3_out: 输出MP3的完整路径, str2: 拼接后的ffmpeg完整命令
-string pic_path, pic_name, tmp2;	  // pic_path: 图片路径, pic_name: 图片文件名, tmp2: 分割模式下的临时文件名
-string language = "zh", temp_set, encoding = "ANSI"; // language: 当前语言, encoding: 目标编码格式
-string width_height = "null", width, height, tp; // 图片转字符画时的宽及高
-vector<string> v_read_txt; // 内存缓冲区：用于保存读取的TXT内容，以便处理后写入LRC
-vector<string> countn;	   // 辅助向量：主要用于计算TXT文件的行数
-vector<string> v_pak;	   // 配置向量：保存main.pak中的设置（语言、编码）
-PIMAGE bg = NULL;		   // EGE图片指针：用于存储背景图片
+string str1 = "ffmpeg -stream_loop ";					   // ffmpeg命令前缀，用于循环流
+string txt_path, txt_name;								   // txt_path: 用户选择的TXT绝对路径, txt_name: 提取出的文件名
+string mp3_out, str2;									   // mp3_out: 输出MP3的完整路径, str2: 拼接后的ffmpeg完整命令
+string pic_path, pic_name, tmp2;						   // pic_path: 图片路径, pic_name: 图片文件名, tmp2: 分割模式下的临时文件名
+string language = "zh", temp_set, encoding = "ANSI";	   // language: 当前语言, encoding: 目标编码格式
+string width_height = "null", width, height, tp;		   // 图片转字符画时的宽及高
+vector<string> v_read_txt;								   // 内存缓冲区：用于保存读取的TXT内容，以便处理后写入LRC
+vector<string> countn;									   // 辅助向量：主要用于计算TXT文件的行数
+vector<string> v_pak;									   // 配置向量：保存main.pak中的设置（语言、编码）
+PIMAGE bg = NULL;										   // EGE图片指针：用于存储背景图片
 int line_number = 0, count_cd = 0, cycle_times, line_last; // line_number: 总行数, cycle_times/line_last: 分割文件时的循环次数和剩余行数
-bool notANSI = false;      // 标记文件是否非ANSI编码
+bool notANSI = false;									   // 标记文件是否非ANSI编码
 
 // ---------------------------------------------------------
 // 类与结构体定义
@@ -47,19 +47,19 @@ bool notANSI = false;      // 标记文件是否非ANSI编码
 // 矩形按钮结构体，用于自定义GUI按钮
 struct RectButton
 {
-	int x, y;          // 左上角坐标
+	int x, y;		   // 左上角坐标
 	int width, height; // 宽和高
 };
 // 定义主菜单按钮区域
-RectButton button = {50, 300, 140, 60};   // "开始转换"按钮
+RectButton button = {50, 300, 140, 60};	  // "开始转换"按钮
 RectButton button2 = {450, 300, 140, 60}; // "ASCII图像显示"按钮
 RectButton button3 = {280, 400, 80, 40};  // "设置"按钮
 // 定义设置菜单按钮区域
-RectButton chinese = {53, 210, 80, 40};   // 设置中文
-RectButton english = {450, 210, 80, 40};  // 设置英文
-RectButton ansi = {53, 330, 80, 40};      // 设置ANSI编码
-RectButton utf_8 = {450, 330, 80, 40};    // 设置UTF-8编码
-RectButton back = {280, 400, 80, 40};     // 返回按钮
+RectButton chinese = {53, 210, 80, 40};	 // 设置中文
+RectButton english = {450, 210, 80, 40}; // 设置英文
+RectButton ansi = {53, 330, 80, 40};	 // 设置ANSI编码
+RectButton utf_8 = {450, 330, 80, 40};	 // 设置UTF-8编码
+RectButton back = {280, 400, 80, 40};	 // 返回按钮
 // 换行符测试结构体（代码中似乎未显式调用，可能用于流处理判定）
 struct TestEOL
 {
@@ -74,31 +74,31 @@ struct TestEOL
 // ---------------------------------------------------------
 // 函数前置声明
 // ---------------------------------------------------------
-bool checkAndPrepareResources();    // 资源检查
-string open_file_dialog();          // 打开TXT文件对话框
-string open_file_dialog_p();        // 打开图片文件对话框
-void backdir();                     // 返回程序根目录
-string checkFileEncoding(const string &filePath); // 检查文件编码
-string change_utf_8(const string &inputPath);     // UTF-8 转 ANSI
-string ANSItoUTF8(const string &inputPath);       // ANSI 转 UTF-8
+bool checkAndPrepareResources();							   // 资源检查
+string open_file_dialog();									   // 打开TXT文件对话框
+string open_file_dialog_p();								   // 打开图片文件对话框
+void backdir();												   // 返回程序根目录
+string checkFileEncoding(const string &filePath);			   // 检查文件编码
+string change_utf_8(const string &inputPath);				   // UTF-8 转 ANSI
+string ANSItoUTF8(const string &inputPath);					   // ANSI 转 UTF-8
 bool insideRectButton(const RectButton *button, int x, int y); // 判定鼠标点击
-void drawRectButton(const RectButton *button);    // 绘制按钮
-void draw();                        // 绘制主菜单
-void draw2();                       // 绘制设置菜单
-void put_image();                   // 绘制背景图
-void main_menu();                   // 主菜单逻辑循环
-void enter_program();               // TXT转LRC流程入口
-void create_music();                // 创建完整MP3
-void create_music2();               // 创建分割MP3
-void create_lrc();                  // 创建完整LRC
-void create_lrc2();                 // 创建分割LRC
-void create_pic();                  // 图片转字符画LRC流程
-void delall();                      // 清空output目录
-void setting_opinion();             // 设置菜单逻辑循环
-void set_language();                // 设置语言
-void set_encoding();                // 设置编码
-void enter_width_height();          // 输入字符画尺寸
-string format_timestamp(int seconds); // 格式化时间戳
+void drawRectButton(const RectButton *button);				   // 绘制按钮
+void draw();												   // 绘制主菜单
+void draw2();												   // 绘制设置菜单
+void put_image();											   // 绘制背景图
+void main_menu();											   // 主菜单逻辑循环
+void enter_program();										   // TXT转LRC流程入口
+void create_music();										   // 创建完整MP3
+void create_music2();										   // 创建分割MP3
+void create_lrc();											   // 创建完整LRC
+void create_lrc2();											   // 创建分割LRC
+void create_pic();											   // 图片转字符画LRC流程
+void delall();												   // 清空output目录
+void setting_opinion();										   // 设置菜单逻辑循环
+void set_language();										   // 设置语言
+void set_encoding();										   // 设置编码
+void enter_width_height();									   // 输入字符画尺寸
+string format_timestamp(int seconds);						   // 格式化时间戳
 
 // ---------------------------------------------------------
 // 辅助工具函数
@@ -155,7 +155,7 @@ bool checkAndPrepareResources()
 	}
 
 	// 2. 检查关键依赖文件是否存在 (ffmpeg, 图片转换器, 编码转换库等)
-	vector<string> critical_files = {"bg.jpg", "silent.mp3", "silent2.mp3", "ffmpeg.exe", "ascii-image-converter.exe", "main.pak", "uchardet.exe", "iconv.exe", "libuchardet.dll", "libcharset-1.dll", "libiconv-2.dll", "libstdc++-6.dll","libgcc_s_dw2-1.dll","libwinpthread-1.dll"};
+	vector<string> critical_files = {"bg.jpg", "silent.mp3", "silent2.mp3", "ffmpeg.exe", "ascii-image-converter.exe", "main.pak", "uchardet.exe", "iconv.exe", "libuchardet.dll", "libcharset-1.dll", "libiconv-2.dll"};
 	for (const auto &file : critical_files)
 	{
 		if (!exists(file) || !is_regular_file(file))
@@ -356,7 +356,7 @@ void put_image()
 	}
 	bg = newimage();
 	getimage(bg, "bg.jpg"); // 从文件加载
-	putimage(0, 0, bg);     // 绘制到屏幕
+	putimage(0, 0, bg);		// 绘制到屏幕
 }
 // ---------------------------------------------------------
 // 程序主入口
@@ -416,7 +416,7 @@ int main()
 		return 0; // 避免继续执行
 	}
 
-	init_console(); // 初始化控制台窗口（用于日志和输入）
+	init_console();		 // 初始化控制台窗口（用于日志和输入）
 	initgraph(640, 480); // 初始化图形窗口 640x480
 
 	setcaption(Lang("LRC阅读器 v3.0.1", "LRC Reader v3.0.1").c_str());
@@ -850,7 +850,7 @@ void create_lrc2()
 	Log("开始生成歌词文件", "Start to convert TXT file to LRC file.");
 
 	cycle_times = ((line_number - line_number % 500) / 500); // 计算需要完整的500行循环次数
-	line_last = line_number % 500; // 剩余行数
+	line_last = line_number % 500;							 // 剩余行数
 	string temp, last;
 	ifstream inputFile3(txt_path, ios::in);
 
@@ -1515,6 +1515,6 @@ string format_timestamp(int seconds)
 	std::ostringstream oss;
 	oss << "[" << std::setw(2) << std::setfill('0') << (seconds / 60) // 分
 		<< ":" << std::setw(2) << std::setfill('0') << (seconds % 60) // 秒
-		<< ".00]"; // 毫秒固定为00
+		<< ".00]";													  // 毫秒固定为00
 	return oss.str();
 }
