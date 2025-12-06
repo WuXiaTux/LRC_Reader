@@ -1,5 +1,5 @@
 :root {
-    --primary: #2c3e50;
+    --primary: #ffffff;
     --secondary: #3498db;
     --hover: #2980b9;
     --text: #2c3e50;
@@ -76,7 +76,7 @@ h1 {
 .description {
     font-size: 1.1rem;
     margin: 40px 0;
-    color: #666;
+    color: hsl(0, 0%, 100%);
 }
 
 .button-container {
@@ -105,7 +105,7 @@ h1 {
 .github { background: #6e5494; }
 .download { background: #3498db; }
 .bilibili { background: #fb7299; }
-.youtube { background: #ff0000; }
+.notification { background: #ff0000; }
 
 .btn:hover {
     transform: translateY(-2px);
@@ -115,7 +115,7 @@ h1 {
 .github:hover { background: #5b3f7a; }
 .download:hover { background: #2980b9; }
 .bilibili:hover { background: #e65a8a; }
-.youtube:hover { background: #cc0000; }
+.notification:hover { background: #cc0000; }
 
 @media (max-width: 768px) {
     .container {

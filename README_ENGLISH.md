@@ -10,9 +10,9 @@ This software only support Windows7 and upgrader Windows system,support 32-bit o
 2.using ascii-image-converter change picture file to LRC and MP3 file combination,to display ASCII picture.<br>
 (This mode only support player that not rolling to play lyrics)<br><br>
 ### The attention points develop and compile software:<br>
-1.The computer system of me is Windows LTSC 10.0.19044 build 19044 64-bit system.<br>
+1.This software can also develop on Windows11/10/7.<br>
 2.This software is written by C++,using EGE graphics library,develop by XiaoXiongMaoC++(IDE),so I suggest you [download this IDE](http://royqh.net/redpandacpp/download/) to develop this software conveniently.<br>
-3.To fitter 32-bit system,don't change ffmpeg.exe,because FFMPEG offical didn't support 32-bit system now,please use this version.Also,if you change ascii-image-converter.exe,please using 32-bit version.<br>
+3.To fitter 32-bit system,please don't change ffmpeg.exe and other build-in software,because FFMPEG offical didn't support 32-bit system now,please use this version.<br>
 4.This is my compile opinion:<br>
 g++.exe -c main.cpp -o main.o   -O2 -pipe -lwinmm -std=c++17 -lComdlg32  -finput-charset=UTF-8 -fexec-charset=gbk <br>
 windres.exe -i v3_private.rc --input-format=rc -o v3_private.res -O coff <br>

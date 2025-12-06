@@ -1,78 +1,66 @@
 // 导入头文件
-#include <graphics.h>	  // EGE图形库
-#include <ege/sys_edit.h> // EGE编辑框组件
-#include <math.h>		  // 数学函数
-#include <iostream>		  // 输入输出流
-#include <windows.h>	  // Windows API
-#include <fstream>
-#include <vector>
-#include <string>
-#include <cstring>
-#include <algorithm>
-#include <cstdio>
-#include <random>
-#include <chrono>
-#include <direct.h>
-#include <commdlg.h>
-#include <tchar.h>
-#include <filesystem>
-#include <locale.h>
-#include <Shlwapi.h>
-// 定义命名空间
+#include <graphics.h>	  // EGE图形库：用于创建图形界面窗口
+#include <ege/sys_edit.h> // EGE编辑框组件：用于GUI输入（虽然本代码主要用控制台输入）
+#include <math.h>		  // 数学函数库
+#include <iostream>		  // 标准输入输出流
+#include <windows.h>	  // Windows API：用于文件对话框、消息框、系统调用等
+#include <fstream>        // 文件流：用于读写TXT、LRC、PAK等文件
+#include <vector>         // 向量容器：用于动态存储字符串数组
+#include <string>         // 字符串类
+#include <cstring>        // C风格字符串处理
+#include <algorithm>      // 算法库：用于transform等操作
+#include <cstdio>         // 标准I/O
+#include <random>         // 随机数（代码中未深度使用，可能是保留库）
+#include <chrono>         // 时间库
+#include <sstream>        // 字符串流：用于格式化时间戳
+#include <iomanip>        // I/O操纵符：用于设置输出格式（如补零）
+#include <direct.h>       // 目录操作：如_mkdir等
+#include <commdlg.h>      // 公共对话框：用于打开文件选择窗口
+#include <tchar.h>        // 字符映射
+#include <filesystem>     // C++17 文件系统库：用于路径和文件检查
+#include <locale.h>       // 本地化设置
+#include <Shlwapi.h>      // Shell轻量级API
+
+// 定义命名空间，省去std::和filesystem::前缀
 using namespace std;
 using namespace filesystem;
+
+// ---------------------------------------------------------
 // 全局变量定义
-string str1 = "ffmpeg -stream_loop "; // ffmpeg命令1
-string txt_path, txt_name;			  // txt_path:TXT路径,txt_name:TXT文件名
-string mp3_out, str2;				  // mp3_out:输出MP3的路径,str2:ffmpeg命令2
-string pic_path, pic_name, tmp2;	  // pic_path:图片路径,pic_name:图片文件名称,tmp2:输出LRC和MP3的文件名
-string language = "zh", temp_set, encoding = "ANSI";
-string width_height = "null", width, height,tp;
-vector<string> v_read_txt; // 用于保存TXT文件内容的数组
-vector<string> countn;	   // 用于计算TXT文件长度的数组
-vector<string> v_pak;	   // 用于保存main.pak文件数据的数组
-PIMAGE bg;				   // 背景图片
-int line_number = 0, count_cd = 0, cycle_times, line_last, bg_number;
-bool notANSI = false;
-// 按钮类定义
+// ---------------------------------------------------------
+string str1 = "ffmpeg -stream_loop "; // ffmpeg命令前缀，用于循环流
+string txt_path, txt_name;			  // txt_path: 用户选择的TXT绝对路径, txt_name: 提取出的文件名
+string mp3_out, str2;				  // mp3_out: 输出MP3的完整路径, str2: 拼接后的ffmpeg完整命令
+string pic_path, pic_name, tmp2;	  // pic_path: 图片路径, pic_name: 图片文件名, tmp2: 分割模式下的临时文件名
+string language = "zh", temp_set, encoding = "ANSI"; // language: 当前语言, encoding: 目标编码格式
+string width_height = "null", width, height, tp; // 图片转字符画时的宽及高
+vector<string> v_read_txt; // 内存缓冲区：用于保存读取的TXT内容，以便处理后写入LRC
+vector<string> countn;	   // 辅助向量：主要用于计算TXT文件的行数
+vector<string> v_pak;	   // 配置向量：保存main.pak中的设置（语言、编码）
+PIMAGE bg = NULL;		   // EGE图片指针：用于存储背景图片
+int line_number = 0, count_cd = 0, cycle_times, line_last; // line_number: 总行数, cycle_times/line_last: 分割文件时的循环次数和剩余行数
+bool notANSI = false;      // 标记文件是否非ANSI编码
+
+// ---------------------------------------------------------
+// 类与结构体定义
+// ---------------------------------------------------------
+// 矩形按钮结构体，用于自定义GUI按钮
 struct RectButton
 {
-	int x, y;
-	int width, height;
+	int x, y;          // 左上角坐标
+	int width, height; // 宽和高
 };
-// 定义按钮区域
-RectButton button = {
-	50, 300, /* x, y */
-	140, 60, /* width, height */
-};
-RectButton button2 = {
-	450, 300, /* x, y */
-	140, 60,  /* width, height */
-};
-RectButton button3 = {
-	280, 400, /* x, y */
-	80, 40,	  /* width, height */
-};
-RectButton chinese = {
-	53, 210, /* x, y */
-	80, 40,	 /* width, height */
-};
-RectButton english = {
-	450, 210, /* x, y */
-	80, 40,	  /* width, height */
-};
-RectButton ansi = {
-	53, 330, /* x, y */
-	80, 40,	 /* width, height */
-};
-RectButton utf_8 = {
-	450, 330, /* x, y */
-	80, 40,	  /* width, height */
-};
-RectButton back = {
-	280, 400, /* x, y */
-	80, 40,	  /* width, height */
-};
+// 定义主菜单按钮区域
+RectButton button = {50, 300, 140, 60};   // "开始转换"按钮
+RectButton button2 = {450, 300, 140, 60}; // "ASCII图像显示"按钮
+RectButton button3 = {280, 400, 80, 40};  // "设置"按钮
+// 定义设置菜单按钮区域
+RectButton chinese = {53, 210, 80, 40};   // 设置中文
+RectButton english = {450, 210, 80, 40};  // 设置英文
+RectButton ansi = {53, 330, 80, 40};      // 设置ANSI编码
+RectButton utf_8 = {450, 330, 80, 40};    // 设置UTF-8编码
+RectButton back = {280, 400, 80, 40};     // 返回按钮
+// 换行符测试结构体（代码中似乎未显式调用，可能用于流处理判定）
 struct TestEOL
 {
 	bool operator()(char c)
@@ -82,138 +70,129 @@ struct TestEOL
 	}
 	char las;
 };
-// 函数定义
-bool checkAndPrepareResources();
-string open_file_dialog();
-void backdir();
-string checkFileEncoding(const string &filePath);
-void change_utf_8(const string &input_path);
-bool ANSItoUTF8(const string &inputPath);
-bool insideRectButton(const RectButton *button, int x, int y);
-void drawRectButton(const RectButton *button);
-void draw();
-void draw2();
-void put_image();
-void main_menu();
-void enter_program();
-void create_music();
-void create_music2();
-void create_lrc();
-void create_lrc2();
-void create_pic();
-void delall();
-void setting_opinion();
-void set_language();
-void set_encoding();
-void enter_width_height();
 
-// 次要函数
-//  检查程序依赖文件是否存在
+// ---------------------------------------------------------
+// 函数前置声明
+// ---------------------------------------------------------
+bool checkAndPrepareResources();    // 资源检查
+string open_file_dialog();          // 打开TXT文件对话框
+string open_file_dialog_p();        // 打开图片文件对话框
+void backdir();                     // 返回程序根目录
+string checkFileEncoding(const string &filePath); // 检查文件编码
+string change_utf_8(const string &inputPath);     // UTF-8 转 ANSI
+string ANSItoUTF8(const string &inputPath);       // ANSI 转 UTF-8
+bool insideRectButton(const RectButton *button, int x, int y); // 判定鼠标点击
+void drawRectButton(const RectButton *button);    // 绘制按钮
+void draw();                        // 绘制主菜单
+void draw2();                       // 绘制设置菜单
+void put_image();                   // 绘制背景图
+void main_menu();                   // 主菜单逻辑循环
+void enter_program();               // TXT转LRC流程入口
+void create_music();                // 创建完整MP3
+void create_music2();               // 创建分割MP3
+void create_lrc();                  // 创建完整LRC
+void create_lrc2();                 // 创建分割LRC
+void create_pic();                  // 图片转字符画LRC流程
+void delall();                      // 清空output目录
+void setting_opinion();             // 设置菜单逻辑循环
+void set_language();                // 设置语言
+void set_encoding();                // 设置编码
+void enter_width_height();          // 输入字符画尺寸
+string format_timestamp(int seconds); // 格式化时间戳
+
+// ---------------------------------------------------------
+// 辅助工具函数
+// ---------------------------------------------------------
+// 1. 获取对应语言的字符串
+// 根据 v_pak[0] 判断当前语言，返回中文或英文字符串
+string Lang(const string &zh, const string &en)
+{
+	return (v_pak.size() > 0 && v_pak[0] == "zh") ? zh : en;
+}
+
+// 2. 封装 MessageBox，自动处理双语
+// 根据当前语言设置显示消息框的标题和内容
+int ShowMsg(const string &zhMsg, const string &enMsg, const string &zhTitle, const string &enTitle, UINT uType = MB_OK)
+{
+	return MessageBox(NULL, Lang(zhMsg, enMsg).c_str(), Lang(zhTitle, enTitle).c_str(), uType);
+}
+// 3. 封装控制台输出，自动添加前缀和换行
+// isError决定前缀是 [Info] 还是 [Error]
+void Log(const string &zhTxt, const string &enTxt, bool isError = false)
+{
+	string prefix = isError ? "[Error]" : "[Info]";
+	cout << prefix << Lang(zhTxt, enTxt) << endl;
+}
+
+// ---------------------------------------------------------
+// 核心功能实现
+// ---------------------------------------------------------
+// 检查程序依赖文件和文件夹是否存在
 bool checkAndPrepareResources()
 {
-	/**
-	 * 检查并准备程序依赖资源
-	 * 1. 检查/创建output目录
-	 * 2. 验证关键文件存在性
-	 * 返回：准备就绪返回true，否则false
-	 */
 	// 1. 检查或创建 output 文件夹
 	if (!exists("output"))
 	{
 		try
 		{
 			create_directory("output");
-			if (v_pak[0] == "zh")
-			{
-				MessageBox(NULL, "output文件夹被删除！程序已自动重新创建 output 文件夹！", "错误", MB_ICONERROR | MB_OK);
-				MessageBox(NULL, "请勿随意删除程序内部文件，否则会导致程序无法运行或报错！", "错误", MB_ICONERROR | MB_OK);
-			}
-			else
-			{
-				MessageBox(NULL, "The output folder has been deleted! Now,the program will automatically create the output folder!", "Error", MB_ICONERROR | MB_OK);
-				MessageBox(NULL, "Please do not delete any files in the program, otherwise the program will not run or report errors!", "Error", MB_ICONERROR | MB_OK);
-			}
+			ShowMsg("output文件夹被删除！程序已自动重新创建 output 文件夹！\n请勿随意删除程序内部文件，否则会导致程序无法运行或报错！",
+					"The output folder has been deleted! The program will automatically create it!\nPlease do not delete internal files.",
+					"错误", "Error", MB_ICONERROR | MB_OK);
 		}
 		catch (const filesystem_error &e)
 		{
-			if (v_pak[0] == "zh")
-			{
-				MessageBox(NULL, "无法创建 output 文件夹！", "错误", MB_ICONERROR | MB_OK);
-			}
-			else
-			{
-				MessageBox(NULL, "Cannot create output folder!", "Error", MB_ICONERROR | MB_OK);
-			}
+			ShowMsg("无法创建 output 文件夹！", "Cannot create output folder!", "错误", "Error", MB_ICONERROR | MB_OK);
 			return false;
 		}
 	}
 	else if (!is_directory("output"))
 	{
-		if (v_pak[0] == "zh")
-		{
-			MessageBox(NULL, "output 被占用且不是文件夹，请重新安装程序！", "错误", MB_ICONERROR | MB_OK);
-		}
-		else
-		{
-			MessageBox(NULL, "The output folder is occupied and is not a folder. Please reinstall the program!", "Error", MB_ICONERROR | MB_OK);
-		}
+		ShowMsg("output 被占用且不是文件夹，请重新安装程序！",
+				"The output folder is occupied and is not a folder. Please reinstall!",
+				"错误", "Error", MB_ICONERROR | MB_OK);
 		return false;
 	}
 
-	// 2. 检查关键文件是否存在
-	vector<string> critical_files = {"bg1.jpg", "bg2.jpg", "bg3.jpg", "silent.mp3", "silent2.mp3", "ffmpeg.exe", "ascii-image-converter.exe", "main.pak"};
+	// 2. 检查关键依赖文件是否存在 (ffmpeg, 图片转换器, 编码转换库等)
+	vector<string> critical_files = {"bg.jpg", "silent.mp3", "silent2.mp3", "ffmpeg.exe", "ascii-image-converter.exe", "main.pak", "uchardet.exe", "iconv.exe", "libuchardet.dll", "libcharset-1.dll", "libiconv-2.dll", "libstdc++-6.dll","libgcc_s_dw2-1.dll","libwinpthread-1.dll"};
 	for (const auto &file : critical_files)
 	{
 		if (!exists(file) || !is_regular_file(file))
 		{
-			if (v_pak[0] == "zh")
-			{
-				MessageBox(NULL, "程序依赖文件被删除，请重新安装程序！", "错误", MB_ICONERROR | MB_OK);
-			}
-			else
-			{
-				MessageBox(NULL, "The program dependency file has been deleted, please reinstall the program!", "Error", MB_ICONERROR | MB_OK);
-			}
+			ShowMsg("程序依赖文件被删除，请重新安装程序！",
+					"The program dependency file has been deleted, please reinstall!",
+					"错误", "Error", MB_ICONERROR | MB_OK);
 			return false;
 		}
 	}
 	return true;
 }
-// TXT文件选择对话框函数
+// 打开TXT文件选择对话框
 string open_file_dialog()
 {
-	/**
-	 * 文件选择对话框（TXT文件）
-	 * 返回：选择的文件路径，取消选择返回空字符串
-	 */
 	OPENFILENAME ofn;
 	char szFile[260] = {0}; // 文件名缓冲区
 	ZeroMemory(&ofn, sizeof(ofn));
 	ofn.lStructSize = sizeof(ofn);
 	ofn.hwndOwner = NULL;
+	// 设置过滤器，只显示TXT文件
 	ofn.lpstrFilter = "Text Files (*.txt)\0*.txt\0";
 	ofn.lpstrFile = szFile;
 	ofn.nMaxFile = sizeof(szFile);
-	if (v_pak[0] == "zh")
-	{
-		ofn.lpstrTitle = _T("选择TXT文件");
-	}
-	else
-	{
-		ofn.lpstrTitle = _T("Select TXT file");
-	}
+
+	string title = Lang("选择TXT文件", "Select TXT file");
+	ofn.lpstrTitle = title.c_str();
+
 	ofn.lpstrInitialDir = _T("C:\\"); // 设置默认目录
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
 	if (GetOpenFileName(&ofn))
 	{
-		return szFile;
+		return szFile; // 返回选择的文件路径
 	}
-	else
-	{
-		return "";
-	}
+	return ""; // 未选择或取消
 }
-// 图片文件选择对话框函数
+// 打开图片文件选择对话框
 string open_file_dialog_p()
 {
 	OPENFILENAME ofn;
@@ -221,290 +200,139 @@ string open_file_dialog_p()
 	ZeroMemory(&ofn, sizeof(ofn));
 	ofn.lStructSize = sizeof(ofn);
 	ofn.hwndOwner = NULL;
+	// 设置过滤器，支持常见图片格式
 	ofn.lpstrFilter = "\0*.jpg\0\0*.png\0\0*.gif\0\0*.bmp\0";
 	ofn.lpstrFile = szFile;
 	ofn.nMaxFile = sizeof(szFile);
-	if (v_pak[0] == "zh")
-	{
-		ofn.lpstrTitle = _T("选择图片文件");
-	}
-	else
-	{
-		ofn.lpstrTitle = _T("Select image file");
-	}
-	ofn.lpstrInitialDir = _T("C:\\"); // 设置默认目录
+
+	string title = Lang("选择图片文件", "Select image file");
+	ofn.lpstrTitle = title.c_str();
+
+	ofn.lpstrInitialDir = _T("C:\\");
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
 	if (GetOpenFileName(&ofn))
 	{
 		return szFile;
 	}
-	else
-	{
-		return "";
-	}
+	return "";
 }
-// 将工作目录切换回程序目录，以用相对路径方式创建文件
+// 将工作目录切换回程序所在目录（防止文件对话框改变当前目录导致读取不到依赖文件）
 void backdir()
 {
 	char buffer[MAX_PATH];
-
-	// 获取当前执行程序的路径
 	GetModuleFileNameA(NULL, buffer, MAX_PATH);
-
-	// 将获取的路径转换为 string 类型
 	string programPath = buffer;
-
-	// 获取程序所在的目录
 	size_t pos = programPath.find_last_of("\\/");
 	string programDir = programPath.substr(0, pos);
-	if (SetCurrentDirectory(programDir.c_str()))
-	{
-	}
-	else
-	{
-		cout << "[ERROR]切换工作目录失败!" << "\n";
-		cout << "[WARNING]现在重新尝试切换，若一直未能切换成功，请尝试修改本程序的安装位置，重新安装尝试" << "\n";
-		if (count_cd >= 5)
-		{
-			MessageBox(NULL, "未能成功切换工作目录，请尝试修改本程序的安装位置、给本程序添加杀软白名单/n或使用管理员权限打开程序！若多次尝试无效，请在B站私信处向UP反馈！", "错误！", MB_OK | MB_ICONERROR);
-		}
-		else
-		{
-			count_cd = count_cd + 1;
-			backdir();
-		}
-	}
+	SetCurrentDirectory(programDir.c_str());
 }
-// 检查文件编码类型的函数
+// 使用外部工具 uchardet 检查文件编码类型
 string checkFileEncoding(const string &filePath)
 {
-	// 检测逻辑：
-	// 1. 检查UTF-8 BOM头(EF BB BF)
-	// 2. 逐字节验证GB2312编码规则
-	// 返回："UTF-8"、"GB2312"或"false"
-	ifstream file(filePath, ios::binary);
-	if (!file)
+	backdir();
+	string tempResultFile = "temp_encoding_result.txt";
+	// 调用系统命令 uchardet 分析编码并重定向输出
+	string command = "uchardet \"" + filePath + "\" > " + tempResultFile + " 2>&1";
+	int result = system(command.c_str());
+
+	if (result != 0)
 	{
-		cerr << "无法打开文件: " << filePath << endl;
+		remove(tempResultFile.c_str());
 		return "false";
 	}
 
-	// 读取前几个字节以检测UTF-8 BOM
-	vector<char> buffer(3);
-	file.read(buffer.data(), buffer.size());
+	ifstream resultFile(tempResultFile);
+	if (!resultFile)
+		return "false";
 
-	// 检测UTF-8 BOM
-	if (buffer.size() >= 3 &&
-		(unsigned char)buffer[0] == 0xEF &&
-		(unsigned char)buffer[1] == 0xBB &&
-		(unsigned char)buffer[2] == 0xBF)
-	{
+	string encoding;
+	getline(resultFile, encoding);
+	resultFile.close();
+	remove(tempResultFile.c_str());
+
+	// 去除空白字符
+	encoding.erase(0, encoding.find_first_not_of(" \t\r\n"));
+	encoding.erase(encoding.find_last_not_of(" \t\r\n") + 1);
+
+	// 归一化编码名称
+	if (encoding == "UTF-8" || encoding == "utf-8")
 		return "UTF-8";
-	}
-
-	// 重新定位到文件开头
-	file.clear();
-	file.seekg(0, ios::beg);
-
-	// 读取文件内容并检测GB2312编码
-	string content((istreambuf_iterator<char>(file)), istreambuf_iterator<char>());
-	file.close();
-
-	// 检测GB2312编码
-	for (size_t i = 0; i < content.size(); ++i)
-	{
-		unsigned char c = static_cast<unsigned char>(content[i]);
-		// GB2312字符范围检查
-		if (c >= 0x80 && c <= 0xFF)
-		{ // 高位字节
-			if (i + 1 < content.size())
-			{
-				unsigned char next = static_cast<unsigned char>(content[i + 1]);
-				if (next >= 0x40 && next <= 0xFE)
-				{
-					// 找到一个有效的GB2312双字节字符
-					i++; // 跳过下一个字节
-				}
-				else
-				{
-					return "false"; // 不符合GB2312
-				}
-			}
-			else
-			{
-				return "false"; // 单独的高位字节没有匹配
-			}
-		}
-	}
-
-	return "GB2312"; // 如果没有问题，返回GB2312
+	else if (encoding == "GB18030" || encoding == "gb18030" ||
+			 encoding == "GB2312" || encoding == "gb2312" ||
+			 encoding == "ISO-8859-16" || encoding == "iso-8859-16")
+		return "GB18030";
+	else
+		return encoding;
 }
-// 将UTF-8转换为ANSI类型
-void change_utf_8(const string &input_path)
+// 使用 iconv 将 UTF-8 文件转换为 ANSI (GB18030)
+string change_utf_8(const string &inputPath)
 {
-	/*
-	转换步骤：
-	1. 读取文件并跳过BOM头
-	2. 使用Windows API进行编码转换：
-	   MultiByteToWideChar(CP_UTF8) → WideCharToMultiByte(CP_ACP)
-	3. 生成_ansi.txt后缀的新文件
-	*/
-	// 扩展名验证（不区分大小写）
-	size_t dot_pos = input_path.find_last_of('.');
-	if (dot_pos == string::npos)
-		return;
-
-	string ext = input_path.substr(dot_pos);
-	transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-	if (ext != ".txt")
-		return;
-
-	// 生成输出路径
-	const string output_path = [&]()
-	{
-		size_t slash_pos = input_path.find_last_of("/\\");
-		string dir = (slash_pos != string::npos) ? input_path.substr(0, slash_pos + 1) : "";
-		string fname = (slash_pos != string::npos) ? input_path.substr(slash_pos + 1) : input_path;
-		return dir + fname.substr(0, fname.size() - 4) + "_ansi.txt";
-	}();
-
-	// 读取文件内容
-	ifstream fin(input_path, ios::binary | ios::ate);
-	if (!fin)
-		return;
-
-	const streamsize total_size = fin.tellg();
-	fin.seekg(0, ios::beg);
-
-	// 检测并跳过BOM
-	vector<char> buffer(total_size);
-	fin.read(buffer.data(), total_size);
-	fin.close();
-
-	const char *data_start = buffer.data();
-	streamsize data_len = total_size;
-	if (total_size >= 3 &&
-		static_cast<unsigned char>(buffer[0]) == 0xEF &&
-		static_cast<unsigned char>(buffer[1]) == 0xBB &&
-		static_cast<unsigned char>(buffer[2]) == 0xBF)
-	{
-		data_start += 3;
-		data_len -= 3;
-	}
-
-	// 编码转换（UTF-8 → UTF-16 → ANSI）
-	vector<wchar_t> utf16_buf(data_len);
-	int wlen = MultiByteToWideChar(
-		CP_UTF8, MB_ERR_INVALID_CHARS,
-		data_start, data_len,
-		utf16_buf.data(), utf16_buf.size());
-	if (wlen <= 0)
-		return;
-
-	vector<char> ansi_buf(wlen * 2); // 预分配安全空间
-	int alen = WideCharToMultiByte(
-		CP_ACP, WC_NO_BEST_FIT_CHARS,
-		utf16_buf.data(), wlen,
-		ansi_buf.data(), ansi_buf.size(),
-		nullptr, nullptr);
-	if (alen <= 0)
-		return;
-
-	// 写入文件
-	ofstream fout(output_path, ios::binary);
-	if (fout)
-	{
-		fout.write(ansi_buf.data(), alen);
-	}
+	ifstream in(inputPath, ios::in);
+	if (!in.is_open())
+		return "unvalid file";
+	in.close();
+	backdir();
+	size_t dot_pos = inputPath.find_last_of('.');
+	string outputPath = inputPath.substr(0, dot_pos) + "_ansi.txt";
+	string formatcmd = "iconv.exe -f UTF-8 -t GB18030 \"" + inputPath + "\" > \"" + outputPath + "\"";
+	int result = system(formatcmd.c_str());
+	if (result != 0)
+		return "failed";
+	else
+		return "success";
 }
-// 将ANSI编码转换为UTF-8类型
-bool ANSItoUTF8(const string &inputPath)
+// 使用 iconv 将 ANSI (GB18030) 文件转换为 UTF-8
+string ANSItoUTF8(const string &inputPath)
 {
-	// 检查文件有效性
-	if (!filesystem::exists(inputPath) || !filesystem::is_regular_file(inputPath))
-	{
-		return false;
-	}
-
-	// 生成输出路径
-	filesystem::path pathObj(inputPath);
-	string outputPath = pathObj.parent_path().string() + "\\" + pathObj.stem().string() + "_utf8" + pathObj.extension().string();
-
-	// 读取文件内容
-	ifstream fin(inputPath, ios::binary | ios::ate);
-	if (!fin)
-		return false;
-
-	const streamsize fileSize = fin.tellg();
-	fin.seekg(0, ios::beg);
-	vector<char> buffer(fileSize);
-	fin.read(buffer.data(), fileSize);
-	fin.close();
-
-	// ANSI转UTF-16
-	int wideLen = MultiByteToWideChar(CP_ACP, 0, buffer.data(), fileSize, nullptr, 0);
-	if (wideLen <= 0)
-		return false;
-
-	vector<wchar_t> utf16Buffer(wideLen);
-	MultiByteToWideChar(CP_ACP, 0, buffer.data(), fileSize,
-						utf16Buffer.data(), wideLen);
-
-	// UTF-16转UTF-8
-	int utf8Len = WideCharToMultiByte(CP_UTF8, 0, utf16Buffer.data(), wideLen,
-									  nullptr, 0, nullptr, nullptr);
-	if (utf8Len <= 0)
-		return false;
-
-	vector<char> utf8Buffer(utf8Len);
-	WideCharToMultiByte(CP_UTF8, 0, utf16Buffer.data(), wideLen,
-						utf8Buffer.data(), utf8Len, nullptr, nullptr);
-
-	// 写入文件（不带BOM）
-	ofstream fout(outputPath, ios::binary);
-	if (!fout)
-		return false;
-
-	fout.write(utf8Buffer.data(), utf8Len);
-	return fout.good();
+	ifstream in(inputPath, ios::in);
+	if (!in.is_open())
+		return "unvalid file";
+	in.close();
+	backdir();
+	size_t dot_pos = inputPath.find_last_of('.');
+	string outputPath = inputPath.substr(0, dot_pos) + "_utf8.txt";
+	string formatcmd = "iconv.exe -f GB18030 -t UTF-8 \"" + inputPath + "\" > \"" + outputPath + "\"";
+	int result = system(formatcmd.c_str());
+	if (result != 0)
+		return "failed";
+	else
+		return "success";
 }
 
-// 以下是绘制按钮的函数
+// ---------------------------------------------------------
+// 绘图相关函数
+// ---------------------------------------------------------
+// 检测鼠标坐标是否在按钮区域内
 bool insideRectButton(const RectButton *button, int x, int y)
 {
 	return (x >= button->x) && (y >= button->y) && (x < button->x + button->width) && (y < button->y + button->height);
 }
+// 绘制矩形按钮
 void drawRectButton(const RectButton *button)
 {
-	setfillcolor(EGERGB(0x1E, 0x90, 0xFF));
+	setfillcolor(EGERGB(0x1E, 0x90, 0xFF)); // 设置填充色为深天蓝
 	bar(button->x, button->y, button->x + button->width, button->y + button->height);
 }
-// 以下是绘制界面的函数
-// 绘制主界面
+// 绘制主菜单界面
 void draw()
 {
-	/*
-	  主界面绘制函数
-	  绘制按钮和文字提示
-	 */
 	drawRectButton(&button);
 	drawRectButton(&button2);
 	drawRectButton(&button3);
+	// 绘制按钮文字
+	outtextxy(88, 322, Lang("开始转换", "Convert TXT file").c_str());
+	outtextxy(470, 322, Lang("ASCII图像显示", "ASCII Image").c_str());
+
+	// 绘制设置按钮文字
 	if (v_pak[0] == "zh")
-	{
-		outtextxy(88, 322, "开始转换");
-		outtextxy(470, 322, "ASCII图像显示");
 		outtextxy(303, 411, "设置");
-	}
 	else
 	{
-		outtextxy(56, 322, "Convert TXT file");
-		outtextxy(475, 312, "ASCII Image");
 		outtextxy(488, 337, "Display");
 		outtextxy(293, 411, "Setting");
 	}
 }
-// 绘制设置界面
+// 绘制设置菜单界面
 void draw2()
 {
 	drawRectButton(&chinese);
@@ -518,237 +346,194 @@ void draw2()
 	outtextxy(470, 343, "UTF-8");
 	outtextxy(282, 415, "返回(back)");
 }
-// 绘制背景图片
+// 加载并绘制背景图片
 void put_image()
 {
+	if (bg != NULL)
+	{
+		delimage(bg); // 释放旧图片内存
+		bg = NULL;
+	}
 	bg = newimage();
-	if (bg_number == 1)
-	{
-		getimage(bg, "bg1.jpg");
-	}
-	else if (bg_number == 2)
-	{
-		getimage(bg, "bg2.jpg");
-	}
-	else
-	{
-		getimage(bg, "bg3.jpg");
-	}
-	putimage(0, 0, bg);
+	getimage(bg, "bg.jpg"); // 从文件加载
+	putimage(0, 0, bg);     // 绘制到屏幕
 }
+// ---------------------------------------------------------
+// 程序主入口
+// ---------------------------------------------------------
 
-// 主要函数
-// 程序入口
 int main()
 {
-	backdir();
+	backdir(); // 确保目录正确
+	// 读取配置文件 main.pak
 	ifstream check_la("main.pak", ios::in);
 	while (getline(check_la, temp_set))
 	{
 		v_pak.push_back(temp_set);
 	}
 	check_la.close();
+
+	// 配置文件完整性检查与修复
+	if (v_pak.size() < 2)
+	{
+		v_pak.clear();
+		v_pak.push_back("zh");	 // 默认语言
+		v_pak.push_back("ANSI"); // 默认编码
+		ofstream reset_file("main.pak", ios::out);
+		reset_file << "zh\nANSI\n";
+		reset_file.close();
+		Log("main.pak被错误修改，语言重新调整为中文！", "main.pak was incorrectly modified, language reset to Chinese.", true);
+	}
+	// 校验语言设置
 	if (v_pak[0] != "zh" && v_pak[0] != "en")
 	{
 		v_pak[0] = "zh";
-		cout << "[Error]main.pak被错误修改，语言重新调整为中文！" << "\n";
+		Log("main.pak被错误修改，语言重新调整为中文！", "main.pak was incorrectly modified, language reset to Chinese.", true);
 		ofstream reset_la("main.pak", ios::out);
 		for (int i = 0; i < 2; i++)
-		{
 			reset_la << v_pak[i] << "\n";
-		}
 		reset_la.close();
 	}
+	// 校验编码设置
 	if (v_pak[1] != "ANSI" && v_pak[1] != "UTF_8")
 	{
 		v_pak[1] = "ANSI";
-		if (v_pak[0] == "zh")
-		{
-			cout << "[Error]main.pak被错误修改，编码重新调整为ANSI！" << "\n";
-		}
-		else
-		{
-			cout << "[Error]main.pak has been incorrectly modified,encoding reset to ANSI." << "\n";
-		}
+		Log("main.pak被错误修改，编码重新调整为ANSI！", "main.pak has been incorrectly modified, encoding reset to ANSI.", true);
 		ofstream reset_en("main.pak", ios::out);
 		for (int i = 0; i < 2; i++)
-		{
 			reset_en << v_pak[i] << "\n";
-		}
 		reset_en.close();
 	}
+
+	// 检查资源，如果缺失则退出或提示
 	if (!checkAndPrepareResources())
-	{ // 1. 检查依赖文件
+	{
 		delimage(bg);
+		bg = NULL;
 		cleardevice();
 		put_image();
 		main_menu();
+		return 0; // 避免继续执行
 	}
-	system("chcp 65001"); // 2. 设置控制台UTF-8编码
-	SetConsoleOutputCP(65001);
-	init_console();
-	initgraph(640, 480, INIT_WITHLOGO); // 3. 初始化640x480图形窗口
+
+	init_console(); // 初始化控制台窗口（用于日志和输入）
+	initgraph(640, 480); // 初始化图形窗口 640x480
+
+	setcaption(Lang("LRC阅读器 v3.0.1", "LRC Reader v3.0.1").c_str());
+	ege_enable_aa(true); // 开启抗锯齿
+
+	// 在控制台输出版权和说明信息
 	if (v_pak[0] == "zh")
 	{
-		setcaption("LRC阅读器 v3.0");
+		cout << "LRC阅读器 v3.0.1\n\n";
+		cout << "作者B站:武侠Tux,作者Github:WuXiaTux\n\n";
+		cout << "感谢您使用本程序,敬请关注!\n\n";
+		cout << "本程序完全免费开源,请勿进行倒卖传播,如果您花钱购买此软件,请您立即退款并举报\n\n";
+		cout << "官方开源地址:https://github.com/WuXiaTux/LRC_Reader\n\n";
+		cout << "官方下载地址:https://kali-linux.lanzn.com/b00pzrssfa 密码:wuxiatux\n\n\n";
+		cout << "以下为程序日志输出\n";
 	}
 	else
 	{
-		setcaption("LRC Reader v3.0");
+		cout << "LRC Reader v3.0.1\n\n";
+		cout << "Author Bilibili:WuXiaTux,Author Github:WuXiaTux\n\n";
+		cout << "Thank you for using this program,please follow&star!\n\n";
+		cout << "This program is completely free and open source,please don't sell it.if you pay for this software,please refund and report the seller immediately.\n\n";
+		cout << "Official open source address:https://github.com/WuXiaTux/LRC_Reader\n\n";
+		cout << "Official download address:https://kali-linux.lanzn.com/b00pzrssfa password:wuxiatux\n\n\n";
+		cout << "Program log output\n";
 	}
-	ege_enable_aa(true);
-	if (v_pak[0] == "zh")
-	{
-		cout << "LRC阅读器 v3.0" << "\n"
-			 << "\n";
-		cout << "作者B站:武侠Tux,作者Github:WuXiaTux" << "\n"
-			 << "\n";
-		cout << "感谢您使用本程序,敬请关注!" << "\n"
-			 << "\n";
-		cout << "本程序完全免费开源,请勿进行倒卖传播,如果您花钱购买此软件,请您立即退款并举报" << "\n"
-			 << "\n";
-		cout << "官方开源地址:https://github.com/WuXiaTux/LRC_Reader" << "\n"
-			 << "\n";
-		cout << "官方下载地址:https://kali-linux.lanzn.com/b00pzrssfa 密码:wuxiatux" << "\n"
-			 << "\n"
-			 << "\n";
-		cout << "以下为程序日志输出" << "\n";
-		cout << "[Info]当前语言为中文，" << "当前LRC文件编码为" << v_pak[1] << "\n";
-	}
-	else
-	{
-		cout << "LRC Reader v3.0" << "\n"
-			 << "\n";
-		cout << "Author Bilibili:WuXiaTux,Author Github:WuXiaTux" << "\n"
-			 << "\n";
-		cout << "Thank you for using this program,please follow&star!" << "\n"
-			 << "\n";
-		cout << "This program is completely free and open source,please don't sell it.if you pay for this software,please refund and report the seller immediately." << "\n"
-			 << "\n";
-		cout << "Official open source address:https://github.com/WuXiaTux/LRC_Reader" << "\n"
-			 << "\n";
-		cout << "Official download address:https://kali-linux.lanzn.com/b00pzrssfa password:wuxiatux" << "\n"
-			 << "\n"
-			 << "\n";
-		cout << "Program log output" << "\n";
-		cout << "[Info]Current language is English, " << "Current LRC file encoding is " << v_pak[1] << "\n";
-	}
-	mt19937 gen(static_cast<unsigned int>(chrono::high_resolution_clock::now().time_since_epoch().count()));
-	uniform_int_distribution<> dis(1, 3);
-	int random_num = dis(gen);
-	if (random_num == 0)
-	{
-		bg_number = 1;
-	}
-	else if (random_num == 2)
-	{
-		bg_number = 2;
-	}
-	else
-	{
-		bg_number = 3;
-	}
+
+	Log("当前语言为中文，当前LRC文件编码为" + v_pak[1],
+		"Current language is English, Current LRC file encoding is " + v_pak[1]);
+
 	put_image();
-	main_menu();
+	main_menu(); // 进入主菜单循环
 	return 0;
 }
-// UI界面和按钮操作函数
+// 主菜单逻辑
 void main_menu()
 {
+	// 设置图形界面样式
 	setcolor(WHITE);
 	setbkmode(TRANSPARENT);
 	setfont(32, 0, "宋体");
-	setcolor(BLUE);
-	if (v_pak[0] == "zh")
-	{
-		outtextxy(200, 110, "LRC阅读器 v3.0");
-	}
-	else
-	{
-		outtextxy(200, 110, "LRC Reader v3.0");
-	}
-	setcolor(WHITE);
+	setcolor(EGERGB(3, 155, 229));
+	outtextxy(185, 110, Lang("LRC阅读器 v3.0.1", "LRC Reader v3.0.1").c_str());
+
+	setcolor(WHITESMOKE);
 	setfont(16, 0, "宋体");
+	// 绘制版权文字
 	if (v_pak[0] == "zh")
 	{
-		outtextxy(30, 150, "作者B站:武侠Tux,作者Github:WuXiaTux");
-		outtextxy(30, 170, "感谢您使用本程序,敬请关注!");
-		outtextxy(30, 190, "本程序完全免费开源,请勿进行倒卖传播,如果您花钱购买此软件,请您立即退款并举报");
-		outtextxy(30, 210, "官方开源地址:https://github.com/WuXiaTux/LRC_Reader");
-		outtextxy(30, 230, "官方下载地址:https://kali-linux.lanzn.com/b00pzrssfa 密码:wuxiatux");
+		outtextxy(20, 150, "作者B站:武侠Tux,作者Github:WuXiaTux");
+		outtextxy(20, 170, "感谢您使用本程序,敬请关注!");
+		outtextxy(20, 190, "本程序完全免费开源,请勿进行倒卖传播,如果您花钱购买此软件,请您立即退款并举报!");
+		outtextxy(20, 210, "官方开源地址:https://github.com/WuXiaTux/LRC_Reader");
+		outtextxy(20, 230, "官方下载地址:https://kali-linux.lanzn.com/b00pzrssfa 密码:wuxiatux");
 	}
 	else
 	{
-		outtextxy(30, 150, "Author Bilibili:WuXiaTux,Author Github:WuXiaTux");
-		outtextxy(30, 170, "Thank you for using this program,please follow&star!");
-		outtextxy(30, 190, "This program is completely free and open source,please don't sell it.");
-		outtextxy(30, 210, "if you pay for this software,please refund and report the seller immediately.");
-		outtextxy(30, 225, "Official open source address:https://github.com/WuXiaTux/LRC_Reader");
-		outtextxy(30, 245, "Official download address:https://kali-linux.lanzn.com/b00pzrssfa");
-		outtextxy(30, 260, "password:wuxiatux");
+		outtextxy(20, 150, "Author Bilibili:WuXiaTux,Author Github:WuXiaTux");
+		outtextxy(20, 170, "Thank you for using this program,please follow&star!");
+		outtextxy(20, 190, "This program is completely free and open source,please don't sell it.");
+		outtextxy(20, 210, "if you pay for this software,please refund and report the seller immediately!");
+		outtextxy(20, 225, "Official open source address:https://github.com/WuXiaTux/LRC_Reader");
+		outtextxy(20, 245, "Official download address:https://kali-linux.lanzn.com/b00pzrssfa");
+		outtextxy(20, 260, "password:wuxiatux");
 	}
+
 	bool clickButton = false, clickButton2 = false, clickButton3 = false;
 	bool redraw = true;
+	// 事件循环
 	for (; is_run(); delay_fps(60))
 	{
 		while (mousemsg())
 		{
 			mouse_msg msg = getmouse();
-			// 判断鼠标左键点击（左键按下确定位置，抬起为执行时刻）
 			if (msg.is_left())
 			{
 				if (msg.is_down())
 				{
-					// 检测点击的按钮
+					// 检测按下哪个按钮
 					clickButton = insideRectButton(&button, msg.x, msg.y);
 					clickButton2 = insideRectButton(&button2, msg.x, msg.y);
 					clickButton3 = insideRectButton(&button3, msg.x, msg.y);
 				}
 				else
 				{
-					// 左键抬起，判断是否需要执行事件响应
-					if (clickButton)
+					// 鼠标抬起时触发功能
+					if (clickButton) // 功能：TXT 转 LRC
 					{
 						clickButton = false;
 						redraw = true;
-						if (v_pak[0] == "zh")
-						{
-							MessageBox(NULL, "请选择要转换的TXT文件位置", "提示", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-						}
-						else
-						{
-							MessageBox(NULL, "Please select the location of the TXT file to be converted", "Information", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-						}
+						ShowMsg("请选择要转换的TXT文件位置", "Please select the location of the TXT file to be converted",
+								"提示", "Information", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
 						enter_program();
 					}
-					if (clickButton2)
+					if (clickButton2) // 功能：图片 转 ASCII字符画
 					{
 						clickButton2 = false;
 						redraw = true;
-						if (v_pak[0] == "zh")
-						{
-							MessageBox(NULL, "本功能不支持滚动播放LRC文件的播放器\n请在左侧命令行界面输入播放器显示LRC文件的长和宽，按下Enter键完成", "提示", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-						}
-						else
-						{
-							MessageBox(NULL, "This function does not support the player that play the LRC file in scrolling mode.\nPlease enter the width and height of the player to display the LRC file, press Enter to continue", "Information", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-						}
-						if (v_pak[0] == "zh")
-						{
-							MessageBox(NULL, "请输入播放器显示的长和宽，输入示例：宽x高(中间的x是小写的英文字母x)", "提示", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-						}
-						else
-						{
-							MessageBox(NULL, "Please enter the length and width displayed by the player.Ex: widthxheight(the middle \"x\" is a lowercase English letter \"X\".)", "Information", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-						}
-						enter_width_height();
+						ShowMsg("本功能不支持滚动播放LRC文件的播放器\n请在左侧命令行界面输入播放器显示LRC文件的长和宽，按下Enter键完成",
+								"This function does not support the player that play the LRC file in scrolling mode.\nPlease enter the width and height of the player in console, press Enter to continue",
+								"提示", "Information", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+
+						ShowMsg("请输入播放器显示的长和宽，输入示例：宽x高(中间的x是小写的英文字母x)",
+								"Please enter the length and width displayed by the player.Ex: widthxheight",
+								"提示", "Information", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+
+						delimage(bg);
+						bg = NULL;
+						enter_width_height(); // 获取尺寸输入
 						create_pic();
 					}
-					if (clickButton3)
+					if (clickButton3) // 功能：设置
 					{
 						clickButton3 = false;
 						redraw = true;
 						delimage(bg);
+						bg = NULL;
 						cleardevice();
 						put_image();
 						setting_opinion();
@@ -756,192 +541,188 @@ void main_menu()
 				}
 			}
 		}
-		// 绘制
 		if (redraw)
 		{
-			draw();
+			draw(); // 重绘界面
 			redraw = false;
 		}
 	}
 }
-// 选择文件和分割模式
+// 进入TXT转LRC的主逻辑
 void enter_program()
 {
-	txt_path = open_file_dialog();
+	txt_path = open_file_dialog(); // 选择文件
 	if (txt_path.empty())
 	{
-		if (v_pak[0] == "zh")
+		Log("用户未选择文件！", "User did not select any file!", true);
+		if (ShowMsg("您未选择文件,请重新选择\n选择继续生成LRC文件(是)或返回主界面(否)",
+					"You did not select any file, please select again\nContinue to generate LRC file (Yes) or return to the main interface (No)",
+					"错误", "Error", MB_YESNO | MB_ICONHAND) == IDYES)
 		{
-			cout << "[Error]用户未选择文件！" << "\n";
-			if (MessageBox(NULL, "您未选择文件,请重新选择\n选择继续生成LRC文件(是)或返回主界面(否)", "错误", MB_YESNO | MB_ICONHAND) == IDYES)
-			{
-				enter_program();
-			}
-			else
-			{
-				delimage(bg);
-				cleardevice();
-				put_image();
-				main_menu();
-			}
+			enter_program();
 		}
 		else
 		{
-			cout << "[Error]User did not select any file!" << "\n";
-			if (MessageBox(NULL, "You did not select any file, please select again\nContinue to generate LRC file (Yes) or return to the main interface (No)", "Error", MB_YESNO | MB_ICONHAND) == IDYES)
-			{
-				enter_program();
-			}
-			else
-			{
-				delimage(bg);
-				cleardevice();
-				put_image();
-				main_menu();
-			}
+			delimage(bg);
+			bg = NULL;
+			cleardevice();
+			put_image();
+			main_menu();
 		}
+		return;
 	}
+
 	ifstream in(txt_path, ios::in);
 	if (!in.is_open())
 	{
-		if (v_pak[0] == "zh")
-		{
-			cout << "[Error]文件打开失败！" << "\n";
-			MessageBox(NULL, "文件打开失败,请检查是否存在此文件并重新选择", "错误", MB_OK | MB_ICONHAND);
-		}
-		else
-		{
-			cout << "[Error]File opening failed!" << "\n";
-			MessageBox(NULL, "File opening failed, please check if the file exists and select again", "Error", MB_OK | MB_ICONHAND);
-		}
+		Log("文件打开失败！", "File opening failed!", true);
+		ShowMsg("文件打开失败,请检查是否存在此文件并重新选择", "File opening failed, please check if the file exists and select again", "错误", "Error", MB_OK | MB_ICONHAND);
 		enter_program();
+		return;
 	}
+
+	// 统计行数
 	ifstream inputFile(txt_path, ios::in);
 	string temp;
-	for (int i = 1; inputFile >> temp; i++)
+	countn.clear();
+	line_number = 0;
+	while (getline(inputFile, temp))
 	{
-		temp.erase(0, temp.find_first_not_of(" \t"));
+		temp.erase(0, temp.find_first_not_of(" \t\r"));
 		if (temp.empty())
-		{
 			continue;
-		}
 		countn.push_back(temp);
 	}
 	inputFile.close();
-	for (int i = 0; i < countn.size(); i++)
-	{
-		line_number++;
-	}
+	line_number = countn.size();
+
+	// 路径格式统一化（将 \ 替换为 /）
 	string x = "\\";
 	string y = "/";
 	size_t pos;
-	while ((pos = txt_path.find(x)) != string::npos)
+	size_t offset = 0;
+	while ((pos = txt_path.find(x, offset)) != string::npos)
 	{
 		txt_path.replace(pos, 1, y);
+		offset = pos + 1;
 	}
+	// 提取文件名
 	txt_name = txt_path;
 	txt_name.erase(0, txt_name.find_last_of("/") + 1);
 	txt_name.erase(txt_name.find_last_of("."), txt_name.find_last_not_of(".txt") + 3);
-	if (v_pak[0] == "zh")
+
+	Log("用户选择文件的绝对路径：" + txt_path, "The user selects the absolute path of the file:" + txt_path);
+	Log("用户选择文件的文件名:" + txt_name, "The user selects the file name:" + txt_name);
+
+	tp = Lang("您选择的文件绝对路径是:", "The file you selected is:") + txt_path;
+
+	if (MessageBox(NULL, tp.c_str(), Lang("检查文件是否正确？", "Check the file is correct?").c_str(), MB_YESNO | MB_ICONASTERISK) == IDNO)
 	{
-		cout << "[Info]用户选择文件的绝对路径：" << txt_path << "\n";
-		cout << "[Info]用户选择文件的文件名:" << txt_name << "\n";
-		tp = "您选择的文件绝对路径是:" + txt_path;
+		Log("用户主动重新选择", "User actively re-selects");
+		enter_program();
+		return;
 	}
 	else
 	{
-		cout << "[Info]The user selects the absolute path of the file:" << txt_path << "\n";
-		cout << "[Info]The user selects the file name:" << txt_name << "\n";
-		tp = "The file you selected is:" + txt_path;
+		Log("文件选择成功", "File selection is successful");
 	}
-	const char *c_filename = tp.c_str();
-	if (v_pak[0] == "zh")
-	{
-		if (MessageBox(NULL, c_filename, "检查文件是否正确？", MB_YESNO | MB_ICONASTERISK) == IDNO)
-		{
-			cout << "[Info]用户主动重新选择" << "\n";
-			enter_program();
-		}
-		else
-		{
-			cout << "[Info]文件选择成功" << "\n";
-		}
-	}
-	else
-	{
-		if (MessageBox(NULL, tp.c_str(), "Check the file is correct?", MB_YESNO | MB_ICONASTERISK) == IDNO)
-		{
-			cout << "[Info]User actively re-selects" << "\n";
-			enter_program();
-		}
-		else
-		{
-			cout << "[Info]File selection is successful" << "\n";
-		}
-	}
-	if (checkFileEncoding(txt_path) == "UTF-8")
+
+	// 编码检查与转换逻辑
+	string encodingType = checkFileEncoding(txt_path);
+	// 如果文件是UTF-8但设置要求ANSI
+	if (encodingType == "UTF-8")
 	{
 		if (v_pak[1] == "ANSI")
 		{
-			if (v_pak[0] == "zh")
+			Log("检查txt文件格式", "Check txt file format");
+			ShowMsg("识别到您选择的txt文件格式不为ANSI格式！建议您将txt文件转换为ANSI格式",
+					"Check the txt file format is not ANSI format! It is recommended that you convert to ANSI.",
+					"提示", "Information", MB_OK | MB_ICONINFORMATION);
+
+			if (ShowMsg("选择转换txt文件为ANSI格式(是)或继续生成LRC文件(否)",
+						"Select to convert txt file to ANSI format (Yes) or continue (No)",
+						"选择是否转换", "Select whether to convert", MB_YESNO | MB_ICONASTERISK) == IDYES)
 			{
-				cout << "[Info]检查txt文件格式" << "\n";
-				MessageBox(NULL, "识别到您选择的txt文件格式不为ANSI格式！为了防止出现乱码，建议您将txt文件转换为ANSI格式，转换后的文件将在文件名后加入_ansi", "提示", MB_OK | MB_ICONINFORMATION);
-				if (MessageBox(NULL, "选择转换txt文件为ANSI格式(是)或继续生成LRC文件(否)", "选择是否转换", MB_YESNO | MB_ICONASTERISK) == IDYES)
+				Log("txt文件格式为UTF-8", "TXT file format is UTF-8");
+				Log("开始转换txt文件为GB18030(ANSI)格式", "Start converting TXT to GB18030(ANSI) format.");
+				string Result = change_utf_8(txt_path);
+				if (Result == "unvalid file")
 				{
-					cout << "[Info]txt文件格式为GB2312" << "\n";
-					cout << "[Info]开始转换txt文件为ANSI格式" << "\n";
-					change_utf_8(txt_path);
-					MessageBox(NULL, "转换完成！请进入选择的目录检查文件是否生成，然后重新在本程序中选择转换后的txt文件", "提示", MB_OK | MB_ICONINFORMATION);
-					cout << "[Info]重新选择txt文件" << "\n";
+					Log("文件打开失败！", "File opening failed!", true);
+					ShowMsg("文件打开失败,请检查是否存在此文件并重新选择", "File opening failed, please check if the file exists.", "错误", "Error", MB_OK | MB_ICONHAND);
 					enter_program();
 				}
-			}
-			else
-			{
-				cout << "[Info]Check txt file format" << "\n";
-				MessageBox(NULL, "Check the txt file format is not ANSI format! To prevent garbled code, it is recommended that you convert the txt file to ANSI format,new file will add \"_ansi\" in the filename.", "Information", MB_OK | MB_ICONINFORMATION);
-				if (MessageBox(NULL, "Select to convert txt file to ANSI format (Yes) or continue to generate LRC file (No)", "Select whether to convert", MB_YESNO | MB_ICONASTERISK) == IDYES)
+				else if (Result == "failed")
 				{
-					cout << "[Info]TXT file format is GB2312" << "\n";
-					cout << "[Info]Start converting TXT to ANSI format." << "\n";
-					change_utf_8(txt_path);
-					MessageBox(NULL, "Conversion completed! Please check if the file is generated in the selected directory, and then select the converted txt file in this program", "Information", MB_OK | MB_ICONINFORMATION);
-					cout << "[Info]Re-select txt file" << "\n";
+					Log("文件转换失败！", "File format failed!", true);
+					ShowMsg("文件转换失败,请使用记事本另存为方法修改此文件编码格式",
+							"File format failed, please use Notepad's 'save as' to modify encoding.",
+							"错误", "Error", MB_OK | MB_ICONHAND);
+					// 失败后返回主菜单
+					ShowMsg("三秒后返回主菜单", "Three seconds later, return to the main menu", "提示", "Information", MB_OK | MB_ICONINFORMATION);
+					Sleep(3000);
+					delimage(bg);
+					bg = NULL;
+					cleardevice();
+					put_image();
+					main_menu();
+				}
+				else
+				{
+					ShowMsg("转换完成！请进入选择的目录检查文件是否生成，然后重新选择",
+							"Conversion completed! Please check and re-select.",
+							"提示", "Information", MB_OK | MB_ICONINFORMATION);
+					Log("重新选择txt文件", "Re-select txt file");
 					enter_program();
 				}
 			}
 		}
 	}
-	else if (checkFileEncoding(txt_path) == "GB2312")
+	// 如果文件是ANSI但设置要求UTF-8
+	else if (encodingType == "GB18030")
 	{
 		if (v_pak[1] == "UTF_8")
 		{
-			if (v_pak[0] == "zh")
+			Log("检查txt文件格式", "Check txt file format");
+			ShowMsg("识别到您选择的txt文件格式不为UTF-8格式！建议您将txt文件转换为UTF-8格式",
+					"Check the txt file format is not UTF-8 format! It is recommended that you convert to UTF-8.",
+					"提示", "Information", MB_OK | MB_ICONINFORMATION);
+
+			if (ShowMsg("选择转换txt文件为UTF-8格式(是)或继续生成LRC文件(否)",
+						"Select to convert txt file to UTF-8 format (Yes) or continue (No)",
+						"选择是否转换", "Select whether to convert", MB_YESNO | MB_ICONASTERISK) == IDYES)
 			{
-				cout << "[Info]检查txt文件格式" << "\n";
-				MessageBox(NULL, "识别到您选择的txt文件格式不为UTF-8格式！为了防止出现乱码，建议您将txt文件转换为UTF-8格式，输出的文件将在文件名后加入_utf8", "提示", MB_OK | MB_ICONINFORMATION);
-				if (MessageBox(NULL, "选择转换txt文件为UTF-8格式(是)或继续生成LRC文件(否)", "选择是否转换", MB_YESNO | MB_ICONASTERISK) == IDYES)
+				Log("txt文件格式为GB18030", "TXT file format is GB18030");
+				Log("开始转换txt文件为UTF-8格式", "Start converting TXT to UTF-8 format.");
+				string Result = ANSItoUTF8(txt_path);
+				// (转换结果处理同上，省略注释)
+				if (Result == "unvalid file")
 				{
-					cout << "[Info]txt文件格式为GB2312" << "\n";
-					cout << "[Info]开始转换txt文件为UTF-8格式" << "\n";
-					ANSItoUTF8(txt_path);
-					MessageBox(NULL, "转换完成！请进入选择的目录检查文件是否生成，然后重新在本程序中选择转换后的txt文件", "提示", MB_OK | MB_ICONINFORMATION);
-					cout << "[Info]重新选择txt文件" << "\n";
+					Log("文件打开失败！", "File opening failed!", true);
+					ShowMsg("文件打开失败,请检查是否存在此文件并重新选择", "File opening failed, please check if the file exists.", "错误", "Error", MB_OK | MB_ICONHAND);
 					enter_program();
 				}
-			}
-			else
-			{
-				cout << "[Info]Check txt file format" << "\n";
-				MessageBox(NULL, "Check the txt file format is not UTF-8 format! To prevent garbled code, it is recommended that you convert the txt file to UTF-8 format,new file will add \"_utf8\" in the filename.", "Information", MB_OK | MB_ICONINFORMATION);
-				if (MessageBox(NULL, "Select to convert txt file to UTF-8 format (Yes) or continue to generate LRC file (No)", "Select whether to convert", MB_YESNO | MB_ICONASTERISK) == IDYES)
+				else if (Result == "failed")
 				{
-					cout << "[Info]TXT file format is GB2312" << "\n";
-					cout << "[Info]Start converting TXT to UTF-8 format." << "\n";
-					ANSItoUTF8(txt_path);
-					MessageBox(NULL, "Conversion completed! Please check if the file is generated in the selected directory, and then select the converted txt file in this program", "Information", MB_OK | MB_ICONINFORMATION);
-					cout << "[Info]Re-select txt file" << "\n";
+					Log("文件转换失败！", "File format failed!", true);
+					ShowMsg("文件转换失败,请使用记事本另存为方法修改此文件编码格式",
+							"File format failed, please use Notepad's 'save as' to modify encoding.",
+							"错误", "Error", MB_OK | MB_ICONHAND);
+
+					ShowMsg("三秒后返回主菜单", "Three seconds later, return to the main menu", "提示", "Information", MB_OK | MB_ICONINFORMATION);
+					Sleep(3000);
+					delimage(bg);
+					bg = NULL;
+					cleardevice();
+					put_image();
+					main_menu();
+				}
+				else
+				{
+					ShowMsg("转换完成！请进入选择的目录检查文件是否生成，然后重新选择",
+							"Conversion completed! Please check and re-select.",
+							"提示", "Information", MB_OK | MB_ICONINFORMATION);
+					Log("重新选择txt文件", "Re-select txt file");
 					enter_program();
 				}
 			}
@@ -949,948 +730,592 @@ void enter_program()
 	}
 	else
 	{
-		if (v_pak[0] == "zh")
+		// 其他编码警告
+		ShowMsg("识别到文件格式不为UTF-8或GB2312！建议使用记事本转换编码！",
+				"Check the txt file format is not UTF-8 or GB2312! Recommended to use Notepad to convert.",
+				"提示", "Information", MB_OK | MB_ICONINFORMATION);
+
+		if (ShowMsg("是否重新选择文件？选择'是'重新选择文件，选择'否'继续",
+					"Do you want to re-select the file? Yes to re-select, No to continue",
+					"是否重选文件？", "Do you want to re-select?", MB_YESNO | MB_ICONASTERISK) == IDYES)
 		{
-			MessageBox(NULL, "识别到您选择的txt文件格式不为UTF-8或GB2312格式！为了防止出现乱码,建议您使用记事本等工具将TXT文件的编码格式转换为上述两种通用的格式！", "提示", MB_OK | MB_ICONINFORMATION);
-			if (MessageBox(NULL, "是否重新选择文件？选择'是'重新选择文件，选择'否'继续进行LRC文件生成", "是否重选文件？", MB_YESNO | MB_ICONASTERISK) == IDYES)
-			{
-				cout << "[Info]重新选择文件" << "\n";
-				enter_program();
-			}
-		}
-		else
-		{
-			MessageBox(NULL, "Check the txt file format is not UTF-8 or GB2312 format! To prevent garbled code, it is recommended that you use a text editor such as Notepad to convert the txt file encoding format to UTF-8 or GB2312.", "Information", MB_OK | MB_ICONINFORMATION);
-			if (MessageBox(NULL, "Do you want to re-select the file? Select 'Yes' to re-select the file, select 'No' to continue generating LRC file", "Do you want to re-select?", MB_YESNO | MB_ICONASTERISK) == IDYES)
-			{
-				cout << "[Info]Re-select txt file" << "\n";
-				enter_program();
-			}
+			Log("重新选择文件", "Re-select txt file");
+			enter_program();
 		}
 	}
+
+	// 大文件处理逻辑（超过500行提示分割）
 	if (line_number > 500)
 	{
-		if (v_pak[0] == "zh")
+		ShowMsg("本文件较大,建议您选择将本文件分割处理，以便减少进入播放器的时长\n分割后，文件会分成多个音乐和LRC文件的组合",
+				"This file is large, recommended to divide the file.\nAfter division, it will be multiple Music+LRC combinations.",
+				"提示", "Information", MB_OK | MB_ICONINFORMATION);
+
+		if (ShowMsg("选择'是'启用文件分割模式(推荐)，选择'否'进入普通模式",
+					"Select 'Yes' to enable file division mode (recommended), select 'No' to enter normal mode",
+					"选择模式", "Select mode", MB_YESNO | MB_ICONASTERISK) == IDYES)
 		{
-			MessageBox(NULL, "本文件较大,建议您选择将本文件分割处理，以便减少进入播放器的时长", "提示", MB_OK | MB_ICONINFORMATION);
-			MessageBox(NULL, "分割后，文件会分成多个音乐和LRC文件的组合，如果前面的文件结束播放，请打开下一个音频文件继续观看", "提示", MB_OK | MB_ICONINFORMATION);
-			if (MessageBox(NULL, "选择'是'启用文件分割模式(推荐)，选择'否'进入普通模式", "选择模式", MB_YESNO | MB_ICONASTERISK) == IDYES)
-			{
-				cout << "[Info]文件分割模式开启" << "\n";
-				create_lrc2();
-			}
-		}
-		else
-		{
-			MessageBox(NULL, "This file is large, it is recommended that you select to divide the file to reduce the time entered into the player", "Information", MB_OK | MB_ICONINFORMATION);
-			MessageBox(NULL, "After division, the file will be divided into a combination of music and LRC files, if the previous file ends the playback, please open the next audio file to continue watching", "Information", MB_OK | MB_ICONINFORMATION);
-			if (MessageBox(NULL, "Select 'Yes' to enable file division mode (recommended), select 'No' to enter normal mode", "Select mode", MB_YESNO | MB_ICONASTERISK) == IDYES)
-			{
-				cout << "[Info]File division mode is enabled" << "\n";
-				create_lrc2();
-			}
+			Log("文件分割模式开启", "File division mode is enabled");
+			create_lrc2(); // 进入分割模式
 		}
 	}
-	if (v_pak[0] == "zh")
-	{
-		cout << "[Info]普通转换模式" << "\n";
-		create_lrc();
-	}
-	else
-	{
-		cout << "[Info]Normal conversion mode" << "\n";
-		create_lrc();
-	}
+
+	Log("普通转换模式", "Normal conversion mode");
+	create_lrc(); // 进入普通模式
 }
-// 创建歌词文件（不使用分割模式）
+// 普通模式：创建LRC文件
 void create_lrc()
 {
-	// 生成流程：
-	// 1. 按行读取文本文件
-	// 2. 生成时间戳（格式：[mm:ss.00]）
-	// 3. 组合成LRC格式行
-	// 4. 输出到output目录
-	// 示例：[00:01.00]第一行文本
-	if (v_pak[0] == "zh")
-	{
-		MessageBox(NULL, "现在开始转换TXT文件为LRC文件和mp3文件,输出在程序文件夹的output目录下", "提示", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]开始生成歌词文件" << "\n";
-	}
-	else
-	{
-		MessageBox(NULL, "Now start to convert TXT file to LRC file and MP3 file, file will output in the output directory of the program.", "Information", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]Start to convert TXT file to LRC file and MP3 file." << "\n";
-	}
-	string temp, numtemp, numtemp2, temp1 = "[", mp3_out = ".00]", last;
-	temp.reserve(99999999);
-	int s = 0, m = 0;
+	v_read_txt.clear();
+	ShowMsg("现在开始转换TXT文件为LRC文件和mp3文件,输出在程序文件夹的output目录下",
+			"Now start to convert TXT file to LRC file and MP3 file, output in output directory.",
+			"提示", "Information", MB_OK | MB_ICONINFORMATION);
+	Log("开始生成歌词文件", "Start to convert TXT file to LRC file and MP3 file.");
+
+	string last;
 	ifstream inputFile2(txt_path, ios::in);
-	for (int i = 1; inputFile2 >> temp; i++)
+	string line;
+	int line_count = 0;
+	// 逐行读取TXT，添加时间戳
+	// 默认每行对应1秒：[00:01.00], [00:02.00]...
+	while (getline(inputFile2, line))
 	{
-		temp.erase(0, temp.find_first_not_of(" \t"));
-		if (temp.empty())
-		{
+		line.erase(0, line.find_first_not_of(" \t"));
+		if (line.empty())
 			continue;
-		}
-		s = i;
-		if (s < 10)
-		{
-			numtemp = "0" + to_string(s);
-			numtemp2 = "00:";
-			last = temp1 + numtemp2 + numtemp + mp3_out + temp;
-		}
-		else if (s < 60 && s >= 10)
-		{
-			numtemp = to_string(s);
-			numtemp2 = "00:";
-			last = temp1 + numtemp2 + numtemp + mp3_out + temp;
-		}
-		else
-		{
-			m = (s - (s % 60)) / 60;
-			s = s % 60;
-			numtemp = to_string(s);
-			numtemp2 = to_string(m);
-			if (s < 10)
-			{
-				numtemp = "0" + numtemp;
-			}
-			if (m < 10)
-			{
-				numtemp2 = "0" + numtemp2 + ":";
-			}
-			else
-			{
-				numtemp2 = numtemp2 + ":";
-			}
-			last = temp1 + numtemp2 + numtemp + mp3_out + temp;
-		}
+		line_count++;
+		last = format_timestamp(line_count) + line;
 		v_read_txt.push_back(last);
 	}
 	inputFile2.close();
+
 	backdir();
 	string tmp = "output/" + txt_name + ".lrc";
 	ofstream out(tmp, ios::out);
-	for (int i = 0; i < v_read_txt.size(); i++)
-	{
+	// 写入output目录
+	for (size_t i = 0; i < v_read_txt.size(); i++)
 		out << v_read_txt[i] << "\n";
-	}
 	out.close();
+
+	// 验证生成结果
 	ifstream op(tmp, ios::in);
 	if (!op.is_open())
 	{
 		delall();
-		if (v_pak[0] == "zh")
-		{
-			MessageBox(NULL, "未能成功生成歌词文件\n请检查txt文件是否损坏或被删除,然后重试", "错误", MB_OK | MB_ICONERROR);
-		}
-		else
-		{
-			MessageBox(NULL, "Failed to create LRC file.\nPlease check if the txt file is damaged or deleted, then retry.", "Error", MB_OK | MB_ICONERROR);
-		}
+		ShowMsg("未能成功生成歌词文件\n请检查txt文件是否损坏或被删除,然后重试",
+				"Failed to create LRC file.\nPlease check if the txt file is damaged or deleted.",
+				"错误", "Error", MB_OK | MB_ICONERROR);
 		delimage(bg);
+		bg = NULL;
+		cleardevice();
+		put_image();
+		main_menu();
+		return;
+	}
+	op.close();
+	Log("成功生成歌词文件", "Success to create LRC file.");
+
+	create_music(); // 生成配套MP3
+
+	ShowMsg("成功生成LRC文件和音频文件\n现在打开output文件夹\n请将文件放入播放器中",
+			"Successfully generated LRC file and audio file\nNow open the output folder\nPlease put files into your player.",
+			"提示", "Information", MB_OK | MB_ICONINFORMATION);
+
+	Log("打开output文件夹", "Open the output folder");
+	system("start output"); // 打开文件夹
+	Log("生成完成，选择是否继续生成", "Generation complete, ask user continue or back to main menu");
+
+	if (ShowMsg("选择继续生成LRC文件(是)或返回主菜单(否)",
+				"Do you want to continue generating LRC files?\nChoose 'Yes' continue, choose 'No' back.",
+				"选择", "Choose", MB_YESNO | MB_ICONASTERISK) == IDYES)
+	{
+		enter_program();
+	}
+	else
+	{
+		delimage(bg);
+		bg = NULL;
 		cleardevice();
 		put_image();
 		main_menu();
 	}
-	op.close();
-	if (v_pak[0] == "zh")
-	{
-		cout << "[Info]成功生成歌词文件" << "\n";
-	}
-	else
-	{
-		cout << "[Info]Success to create LRC file." << "\n";
-	}
-	create_music();
-	if (v_pak[0] == "zh")
-	{
-		MessageBox(NULL, "成功生成LRC文件和音频文件", "提示", MB_OK | MB_ICONINFORMATION);
-		MessageBox(NULL, "现在打开output文件夹\n请连接学习机/词典笔等音乐播放器，打开其对应音乐文件夹，将程序生成的音乐和歌词文件剪切至其中\n具体操作可观看软件作者B站视频", "提示", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]打开output文件夹" << "\n";
-		system("start output");
-		Sleep(5000);
-		cout << "[Info]生成完成，选择是否继续生成" << "\n";
-		if (MessageBox(NULL, "选择继续生成LRC文件(是)或返回主菜单(否)", "选择", MB_YESNO | MB_ICONASTERISK) == IDYES)
-		{
-			create_pic();
-		}
-		else
-		{
-			delimage(bg);
-			cleardevice();
-			put_image();
-			main_menu();
-		}
-	}
-	else
-	{
-		MessageBox(NULL, "Successfully generated LRC file and audio file", "Information", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]Successfully generated LRC file" << "\n";
-		MessageBox(NULL, "Now open the output folder\nPlease connect the learning machine/dictionary pen etc. music player, open its corresponding music folder, and cut the program generated music and LRC file to it\nFor specific operation, please watch the software author's Youtube video", "Information", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]Open the output folder" << "\n";
-		system("start output");
-		Sleep(5000);
-		cout << "[Info]Generation complete, ask user continue or back to main menu" << "\n";
-		if (MessageBox(NULL, "Do you want to continue generating LRC files?\nChoose \"Yes\" continue create file,choose \"No\" back to the main menu.", "Choose", MB_YESNO | MB_ICONASTERISK) == IDYES)
-		{
-			create_pic();
-		}
-		else
-		{
-			delimage(bg);
-			cleardevice();
-			put_image();
-			main_menu();
-		}
-	}
 }
-// 创建歌词文件（使用分割模式）
+// 分割模式：创建LRC文件（每500行分割一次）
 void create_lrc2()
 {
-	/*
-	分割规则：
-	1. 每500行分割为一个文件
-	2. 计算总分割次数：cycle_times = (总行数 - 余数)/500
-	3. 处理剩余行数（line_last = 总行数%500）
-	4. 生成形如 filename1.lrc, filename2.lrc... 的文件
-	*/
-	if (v_pak[0] == "zh")
-	{
-		MessageBox(NULL, "现在开始转换TXT文件为LRC文件,输出在程序文件夹的output目录下", "提示", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]开始生成歌词文件" << "\n";
-	}
-	else
-	{
-		MessageBox(NULL, "Now start to convert TXT file to LRC file, file will output in the output directory of the program.", "Information", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]Start to convert TXT file to LRC file." << "\n";
-	}
-	cycle_times = ((line_number - line_number % 500) / 500), line_last = line_number % 500;
-	string temp, numtemp, numtemp2, temp1 = "[", mp3_out = ".00]", last;
-	temp.reserve(99999999);
-	int s = 0, m = 0;
+	v_read_txt.clear();
+	ShowMsg("现在开始转换TXT文件为LRC文件,输出在程序文件夹的output目录下",
+			"Now start to convert TXT file to LRC file, output in output directory.",
+			"提示", "Information", MB_OK | MB_ICONINFORMATION);
+	Log("开始生成歌词文件", "Start to convert TXT file to LRC file.");
+
+	cycle_times = ((line_number - line_number % 500) / 500); // 计算需要完整的500行循环次数
+	line_last = line_number % 500; // 剩余行数
+	string temp, last;
 	ifstream inputFile3(txt_path, ios::in);
+
+	// 处理完整的500行块
 	for (int cycle = 1; cycle <= cycle_times; cycle++)
 	{
-		for (int i = 1; i <= 500; i++)
+		int i = 1;
+		while (i <= 500 && getline(inputFile3, temp))
 		{
-			inputFile3 >> temp;
-			temp.erase(0, temp.find_first_not_of(" \t"));
+			temp.erase(0, temp.find_first_not_of(" \t\r"));
 			if (temp.empty())
-			{
 				continue;
-			}
-			s = i;
-			if (s < 10)
-			{
-				numtemp = "0" + to_string(s);
-				numtemp2 = "00:";
-				last = temp1 + numtemp2 + numtemp + mp3_out + temp;
-			}
-			else if (s < 60 && s >= 10)
-			{
-				numtemp = to_string(s);
-				numtemp2 = "00:";
-				last = temp1 + numtemp2 + numtemp + mp3_out + temp;
-			}
-			else
-			{
-				m = (s - (s % 60)) / 60;
-				s = s % 60;
-				numtemp = to_string(s);
-				numtemp2 = to_string(m);
-				if (s < 10)
-				{
-					numtemp = "0" + numtemp;
-				}
-				if (m < 10)
-				{
-					numtemp2 = "0" + numtemp2 + ":";
-				}
-				else
-				{
-					numtemp2 = numtemp2 + ":";
-				}
-				last = temp1 + numtemp2 + numtemp + mp3_out + temp;
-			}
+			last = format_timestamp(i) + temp;
 			v_read_txt.push_back(last);
+			i++;
 		}
+
 		backdir();
-		string tmp = "output/" + txt_name + to_string(cycle) + ".lrc";
+		// 文件名增加序号 (1), (2) 等
+		string tmp = "output/" + txt_name + "(" + to_string(cycle) + ")" + ".lrc";
 		ofstream out(tmp, ios::out);
-		for (int i = 0; i < v_read_txt.size(); i++)
-		{
-			out << v_read_txt[i] << "\n";
-		}
+		for (size_t k = 0; k < v_read_txt.size(); k++)
+			out << v_read_txt[k] << "\n";
 		out.close();
+
 		ifstream op(tmp, ios::in);
 		if (!op.is_open())
 		{
 			delall();
-			if (v_pak[0] == "zh")
-			{
-				MessageBox(NULL, "未能成功生成歌词文件\n请检查txt文件是否损坏或被删除,然后重试", "错误", MB_OK | MB_ICONERROR);
-				cout << "三秒后返回主界面" << "\n";
-			}
-			else
-			{
-				MessageBox(NULL, "Failed to create LRC file.\nPlease check if the txt file is damaged or deleted, then retry.", "Error", MB_OK | MB_ICONERROR);
-				cout << "Three seconds later, return to the main menu" << "\n";
-			}
+			ShowMsg("未能成功生成歌词文件\n请检查txt文件是否损坏或被删除,然后重试",
+					"Failed to create LRC file.\nPlease check if the txt file is damaged or deleted.",
+					"错误", "Error", MB_OK | MB_ICONERROR);
+			Log("三秒后返回主界面", "Three seconds later, return to the main menu");
 			Sleep(3000);
 			delimage(bg);
+			bg = NULL;
 			cleardevice();
 			put_image();
 			main_menu();
+			return;
 		}
 		op.close();
 		v_read_txt.clear();
 	}
-	for (int i = 1; i <= line_last; i++)
+
+	// 处理剩余行数
+	int i = 1;
+	while (i <= line_last && getline(inputFile3, temp))
 	{
-		inputFile3 >> temp;
-		temp.erase(0, temp.find_first_not_of(" \t"));
+		temp.erase(0, temp.find_first_not_of(" \t\r"));
 		if (temp.empty())
-		{
 			continue;
-		}
-		s = i;
-		if (s < 10)
-		{
-			numtemp = "0" + to_string(s);
-			numtemp2 = "00:";
-			last = temp1 + numtemp2 + numtemp + mp3_out + temp;
-		}
-		else if (s < 60 && s >= 10)
-		{
-			numtemp = to_string(s);
-			numtemp2 = "00:";
-			last = temp1 + numtemp2 + numtemp + mp3_out + temp;
-		}
-		else
-		{
-			m = (s - (s % 60)) / 60;
-			s = s % 60;
-			numtemp = to_string(s);
-			numtemp2 = to_string(m);
-			if (s < 10)
-			{
-				numtemp = "0" + numtemp;
-			}
-			if (m < 10)
-			{
-				numtemp2 = "0" + numtemp2 + ":";
-			}
-			else
-			{
-				numtemp2 = numtemp2 + ":";
-			}
-			last = temp1 + numtemp2 + numtemp + mp3_out + temp;
-		}
+		last = format_timestamp(i) + temp;
 		v_read_txt.push_back(last);
+		i++;
 	}
+
 	backdir();
 	int cycle_temp = cycle_times + 1;
-	tmp2 = "output/" + txt_name + to_string(cycle_temp);
-	string tmp22 = tmp2 + ".lrc";
+	tmp2 = "output/" + txt_name + "(" + to_string(cycle_temp);
+	string tmp22 = tmp2 + ").lrc";
 	ofstream out(tmp22, ios::out);
-	for (int i = 0; i < v_read_txt.size(); i++)
-	{
-		out << v_read_txt[i] << "\n";
-	}
+	for (size_t k = 0; k < v_read_txt.size(); k++)
+		out << v_read_txt[k] << "\n";
 	out.close();
+
+	// 验证剩余部分生成
 	ifstream op(tmp22, ios::in);
 	if (!op.is_open())
 	{
 		delall();
-		if (v_pak[0] == "zh")
-		{
-			MessageBox(NULL, "未能成功生成歌词文件\n请检查txt文件是否损坏或被删除,然后重试", "错误", MB_OK | MB_ICONERROR);
-		}
-		else
-		{
-			MessageBox(NULL, "Failed to create LRC file.\nPlease check if the txt file is damaged or deleted, then retry.", "Error", MB_OK | MB_ICONERROR);
-		}
+		ShowMsg("未能成功生成歌词文件", "Failed to create LRC file", "错误", "Error", MB_OK | MB_ICONERROR);
 		delimage(bg);
+		bg = NULL;
 		cleardevice();
 		put_image();
 		main_menu();
+		return;
 	}
 	op.close();
 	v_read_txt.clear();
 	inputFile3.close();
-	if (v_pak[0] == "zh")
+	Log("成功生成歌词文件", "Successfully generated LRC file");
+
+	create_music2(); // 生成分割的MP3
+
+	ShowMsg("成功生成LRC文件和音频文件\n现在打开output文件夹",
+			"Successfully generated LRC file and audio file\nNow open the output folder",
+			"提示", "Information", MB_OK | MB_ICONINFORMATION);
+
+	Log("成功生成音频文件", "Successfully generated audio file");
+	Log("打开output文件夹", "Open the output folder");
+	system("start output");
+	Log("生成完成，选择是否继续生成", "Generation complete, ask user continue or back to main menu");
+
+	if (ShowMsg("选择继续生成LRC文件(是)或返回主菜单(否)",
+				"Do you want to continue generating LRC files?",
+				"选择", "Choose", MB_YESNO | MB_ICONASTERISK) == IDYES)
 	{
-		cout << "[Info]成功生成歌词文件" << "\n";
+		enter_program();
 	}
 	else
 	{
-		cout << "[Info]Successfully generated LRC file" << "\n";
-	}
-	create_music2();
-	if (v_pak[0] == "zh")
-	{
-		MessageBox(NULL, "成功生成LRC文件和音频文件", "提示", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]成功生成音频文件" << "\n";
-		MessageBox(NULL, "现在打开output文件夹\n请连接学习机/词典笔等音乐播放器，打开其对应音乐文件夹，将程序生成的音乐和歌词文件剪切至其中\n具体操作可观看软件作者B站视频", "提示", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]打开output文件夹" << "\n";
-		system("start output");
-		Sleep(5000);
-		cout << "[Info]生成完成，选择是否继续生成" << "\n";
-		if (MessageBox(NULL, "选择继续生成LRC文件(是)或返回主菜单(否)", "选择", MB_YESNO | MB_ICONASTERISK) == IDYES)
-		{
-			create_pic();
-		}
-		else
-		{
-			delimage(bg);
-			cleardevice();
-			put_image();
-			main_menu();
-		}
-	}
-	else
-	{
-		MessageBox(NULL, "Successfully generated LRC file and audio file", "Information", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]Successfully generated LRC file" << "\n";
-		MessageBox(NULL, "Now open the output folder\nPlease connect the learning machine/dictionary pen etc. music player, open its corresponding music folder, and cut the program generated music and LRC file to it\nFor specific operation, please watch the software author's Youtube video", "Information", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]Open the output folder" << "\n";
-		system("start output");
-		Sleep(5000);
-		cout << "[Info]Generation complete, ask user continue or back to main menu" << "\n";
-		if (MessageBox(NULL, "Do you want to continue generating LRC files?\nChoose \"Yes\" continue create file,choose \"No\" back to the main menu.", "Choose", MB_YESNO | MB_ICONASTERISK) == IDYES)
-		{
-			create_pic();
-		}
-		else
-		{
-			delimage(bg);
-			cleardevice();
-			put_image();
-			main_menu();
-		}
-	}
-}
-// 创建歌词文件（不使用分割模式模式）
-void create_music()
-{
-	// 使用FFmpeg生成静音音频：
-	// 命令模板：ffmpeg -stream_loop line_number -i silent.mp3 ...
-	// N表示循环次数（对应文本行数）
-	// 输出MP3时长与歌词行数匹配
-	if (v_pak[0] == "zh")
-	{
-		cout << "[Info]现在创建与LRC文件配套的音频文件" << "\n"
-			 << "[Info]本音频文件为静音文件,输出在程序文件夹的output目录下" << "\n"
-			 << "[Info]控制台会出现许多英文字符,请不要对程序做任何操作(尤其是按q和?键，否则会导致生成的文件无法正常使用)或退出程序,等待程序提示下一步" << "\n";
-	}
-	else
-	{
-		cout << "[Info]Now create audio file" << "\n"
-			 << "[Info]This audio file is a silent file,these files will output in the output directory of the program folder" << "\n"
-			 << "[Info]Do not do any operation on the program, wait for the program to prompt the next step" << "\n";
-		cout << "[Info]Start to create audio file" << "\n";
-	}
-	mp3_out = "output/" + txt_name + ".mp3";
-	ifstream read(mp3_out, ios::in);
-	if (read.is_open())
-	{
-		if (v_pak[0] == "zh")
-		{
-			cout << "[Info]重复文件！现在删除原文件，创建新文件" << "\n";
-		}
-		else
-		{
-			cout << "[Info]Duplicate file! Now delete the original file and create a new file" << "\n";
-		}
-		remove(mp3_out.c_str());
-	}
-	read.close();
-	string temp1 = to_string(line_number) + " ";
-	str2 = str1 + temp1 + "-i silent.mp3 -c copy \"output/" + txt_name + ".mp3\" -y";
-	const char *command = str2.c_str();
-	if (v_pak[0] == "zh")
-	{
-		cout << "[Info]ffmpeg开始创建音频文件" << "\n";
-	}
-	else
-	{
-		cout << "[Info]ffmpeg start create audio files" << "\n";
-	}
-	int ret = system(command);
-	if (ret != 0)
-	{
-		MessageBox(NULL, "ffmpeg错误\n请查看ffmpeg输出，从中查看问题并重试，如果不知道如何解决请私信作者B站账号", "错误", MB_OK | MB_ICONERROR);
-		delall();
-		MessageBox(NULL, "三秒后返回主菜单", "提示", MB_OK | MB_ICONINFORMATION);
-		Sleep(3000);
 		delimage(bg);
+		bg = NULL;
 		cleardevice();
 		put_image();
 		main_menu();
 	}
+}
+// 普通模式：生成MP3
+void create_music()
+{
+	Log("现在创建与LRC文件配套的音频文件\n本音频文件为静音文件,输出在output目录下\n请不要操作程序，等待提示",
+		"Now create audio file\nThis audio file is a silent file, output in output directory\nDo not operate the program, wait for prompt");
+
+	mp3_out = "output/" + txt_name + ".mp3";
+	// 检查重复
+	ifstream read(mp3_out, ios::in);
+	if (read.is_open())
+	{
+		Log("重复文件！现在删除原文件，创建新文件", "Duplicate file! Now delete the original file and create a new file");
+		remove(mp3_out.c_str());
+	}
+	read.close();
+	// 拼接FFmpeg命令：循环生成静音音频，时长由 line_number 决定
+	string temp1 = to_string(line_number) + " ";
+	str2 = str1 + temp1 + "-i silent.mp3 -c copy \"output/" + txt_name + ".mp3\" -y";
+
+	Log("ffmpeg开始创建音频文件", "ffmpeg start create audio files");
+
+	int ret = system(str2.c_str());
+	if (ret != 0)
+	{
+		ShowMsg("ffmpeg错误\n请查看ffmpeg输出，从中查看问题并重试", "ffmpeg error\nPlease check the ffmpeg output and retry", "错误", "Error", MB_OK | MB_ICONERROR);
+		delall();
+		ShowMsg("三秒后返回主菜单", "Three seconds later, return to the main menu", "提示", "Information", MB_OK | MB_ICONINFORMATION);
+		Sleep(3000);
+		delimage(bg);
+		bg = NULL;
+		cleardevice();
+		put_image();
+		main_menu();
+		return;
+	}
+	// 验证生成
 	ifstream read2(mp3_out, ios::in);
 	if (!read2.is_open())
 	{
-		MessageBox(NULL, "未能成功生成音频文件\n请查看ffmpeg输出", "错误", MB_OK | MB_ICONERROR);
-		MessageBox(NULL, "如果您不能看懂输出内容，请将输出内容全部复制(选中并按住Ctrl+Shift+C)或将LOG部分截图，\n私信我的哔哩哔哩账号'武侠Tux'寻找解决办法", "错误", MB_OK | MB_ICONERROR);
+		ShowMsg("未能成功生成音频文件\n请查看ffmpeg输出", "Failed to generate audio file\nPlease check ffmpeg output", "错误", "Error", MB_OK | MB_ICONERROR);
 		delall();
-		MessageBox(NULL, "三秒后返回主菜单", "提示", MB_OK | MB_ICONINFORMATION);
+		ShowMsg("三秒后返回主菜单", "Three seconds later, return to the main menu", "提示", "Information", MB_OK | MB_ICONINFORMATION);
 		Sleep(3000);
 		delimage(bg);
+		bg = NULL;
 		cleardevice();
 		put_image();
 		main_menu();
 	}
 	read2.close();
-	MessageBox(NULL, "成功生成LRC文件和音频文件", "提示", MB_OK | MB_ICONINFORMATION);
-	cout << "[Info]成功生成音频文件" << "\n";
 }
-// 创建歌词文件（使用分割模式）
+// 分割模式：生成MP3
 void create_music2()
 {
-	if (v_pak[0] == "zh")
-	{
-		cout << "[Info]现在创建与LRC文件配套的音频文件" << "\n"
-			 << "[Info]本音频文件为静音文件,输出在程序文件夹的output目录下" << "\n"
-			 << "[Info]控制台会出现许多英文字符,请不要对程序做任何操作(尤其是按q和?键，否则会导致生成的文件无法正常使用)或退出程序,等待程序提示下一步" << "\n";
-	}
-	else
-	{
-		cout << "[Info]Now create audio file" << "\n"
-			 << "[Info]This audio file is a silent file,these files will output in the output directory of the program folder" << "\n"
-			 << "[Info]Do not do any operation on the program, wait for the program to prompt the next step" << "\n";
-		cout << "[Info]Start to create audio file" << "\n";
-	}
-	string silent2 = "silent2.mp3";
+	Log("现在创建与LRC文件配套的音频文件\n本音频文件为静音文件,输出在output目录下\n请不要操作程序",
+		"Now create audio file\nThis audio file is a silent file, output in output directory\nDo not operate the program");
+
+	string silent2 = "silent2.mp3"; // 预制的500秒静音文件？或者长静音文件
+	// 为每个完整循环复制静音文件
 	for (int i = 1; i <= cycle_times; i++)
 	{
 		backdir();
-		string temp_mp3 = "output/" + txt_name + to_string(i) + ".mp3";
+		string temp_mp3 = "output/" + txt_name + "(" + to_string(i) + ")" + ".mp3";
 		ifstream read(temp_mp3, ios::in);
 		if (read.is_open())
 		{
-			if (v_pak[0] == "zh")
-			{
-				cout << "[Info]重复文件！现在删除原文件，创建新文件" << "\n";
-			}
-			else
-			{
-				cout << "[Info]Duplicate file! Now delete the original file and create a new file" << "\n";
-			}
+			Log("重复文件！现在删除原文件，创建新文件", "Duplicate file! Now delete the original file and create a new file");
 			remove(temp_mp3.c_str());
 		}
 		read.close();
-		CopyFile(silent2.c_str(), temp_mp3.c_str(), FALSE);
-		backdir();
+		CopyFile(silent2.c_str(), temp_mp3.c_str(), FALSE); // 直接复制文件
+
+		// 验证
 		ifstream read2(temp_mp3, ios::in);
 		if (!read2.is_open())
 		{
-			if (v_pak[0] == "zh")
-			{
-				MessageBox(NULL, "未能成功生成音频文件\n请查看ffmpeg输出", "错误", MB_OK | MB_ICONERROR);
-				MessageBox(NULL, "如果您不能看懂输出内容，请将输出内容全部复制(选中并按住Ctrl+Shift+C)或将LOG部分截图，\n私信我的哔哩哔哩账号'武侠Tux'寻找解决办法", "错误", MB_OK | MB_ICONERROR);
-				delall();
-				MessageBox(NULL, "三秒后返回主菜单", "提示", MB_OK | MB_ICONINFORMATION);
-			}
-			else
-			{
-				MessageBox(NULL, "Failed to generate audio file\nPlease check the ffmpeg output", "Error", MB_OK | MB_ICONERROR);
-				MessageBox(NULL, "If you can't understand the output content, please copy (select and hold Ctrl+Shift+C) or take a screenshot of the LOG part, \nand contact my YouTube account '武侠Tux' for help", "Error", MB_OK | MB_ICONERROR);
-				delall();
-				MessageBox(NULL, "Three seconds later, return to the home page", "Information", MB_OK | MB_ICONINFORMATION);
-			}
+			ShowMsg("未能成功生成音频文件\n请查看ffmpeg输出", "Failed to generate audio file\nPlease check ffmpeg output", "错误", "Error", MB_OK | MB_ICONERROR);
+			delall();
+			ShowMsg("三秒后返回主菜单", "Three seconds later, return to the home page", "提示", "Information", MB_OK | MB_ICONINFORMATION);
 			Sleep(3000);
 			delimage(bg);
+			bg = NULL;
 			cleardevice();
 			put_image();
 			main_menu();
+			return;
 		}
 		read2.close();
 	}
+	// 为剩余行数生成特定长度的音频
 	if (line_last > 0)
 	{
-		str2 = str1 + to_string(line_last) + " -i silent.mp3 -c copy \"" + tmp2 + ".mp3\" -y";
-		const char *command1 = str2.c_str();
-		if (v_pak[0] == "zh")
-		{
-			cout << "[Info]ffmpeg开始创建音频文件" << "\n";
-		}
-		else
-		{
-			cout << "[Info]ffmpeg start create audio files" << "\n";
-		}
-		int ret1 = system(command1);
+		str2 = str1 + to_string(line_last) + " -i silent.mp3 -c copy \"" + tmp2 + ").mp3\" -y";
+		Log("ffmpeg开始创建音频文件", "ffmpeg start create audio files");
+
+		int ret1 = system(str2.c_str());
 		if (ret1 != 0)
 		{
-			if (v_pak[0] == "zh")
-			{
-				MessageBox(NULL, "ffmpeg错误\n请查看ffmpeg输出，从中查看问题并重试，如果不知道如何解决请私信作者B站账号\"武侠Tux\"", "错误", MB_OK | MB_ICONERROR);
-				delall();
-				MessageBox(NULL, "三秒后返回主菜单", "提示", MB_OK | MB_ICONINFORMATION);
-			}
-			else
-			{
-				MessageBox(NULL, "ffmpeg error\nPlease check the ffmpeg output, from which you can find the problem and retry, if you do not know how to solve, please contact my YouTube account '武侠Tux'", "Error", MB_OK | MB_ICONERROR);
-				delall();
-				MessageBox(NULL, "Three seconds later, return to the home page", "Information", MB_OK | MB_ICONINFORMATION);
-			}
+			ShowMsg("ffmpeg错误\n请查看ffmpeg输出", "ffmpeg error\nPlease check the ffmpeg output", "错误", "Error", MB_OK | MB_ICONERROR);
+			delall();
+			ShowMsg("三秒后返回主菜单", "Three seconds later, return to the home page", "提示", "Information", MB_OK | MB_ICONINFORMATION);
 			Sleep(3000);
 			delimage(bg);
+			bg = NULL;
 			cleardevice();
 			put_image();
 			main_menu();
+			return;
 		}
-		string tmp3 = tmp2 + ".mp3";
+		// 验证
+		string tmp3 = tmp2 + ").mp3";
 		ifstream read2(tmp3, ios::in);
 		if (!read2.is_open())
 		{
-			if (v_pak[0] == "zh")
-			{
-				MessageBox(NULL, "未能成功生成音频文件\n请查看ffmpeg输出", "错误", MB_OK | MB_ICONERROR);
-				MessageBox(NULL, "如果您不能看懂输出内容，请将输出内容全部复制(选中并按住Ctrl+Shift+C)或将LOG部分截图，\n私信我的哔哩哔哩账号'武侠Tux'寻找解决办法", "错误", MB_OK | MB_ICONERROR);
-				delall();
-				MessageBox(NULL, "三秒后返回主菜单", "提示", MB_OK | MB_ICONINFORMATION);
-			}
-			else
-			{
-				MessageBox(NULL, "Failed to generate audio file\nPlease check the ffmpeg output", "Error", MB_OK | MB_ICONERROR);
-				MessageBox(NULL, "If you can't understand the output content, please copy (select and hold Ctrl+Shift+C) or take a screenshot of the LOG part, \nand contact my YouTube account '武侠Tux' for help", "Error", MB_OK | MB_ICONERROR);
-				delall();
-				MessageBox(NULL, "Three seconds later, return to the home page", "Information", MB_OK | MB_ICONINFORMATION);
-			}
+			ShowMsg("未能成功生成音频文件\n请查看ffmpeg输出", "Failed to generate audio file\nPlease check ffmpeg output", "错误", "Error", MB_OK | MB_ICONERROR);
+			delall();
+			ShowMsg("三秒后返回主菜单", "Three seconds later, return to the home page", "提示", "Information", MB_OK | MB_ICONINFORMATION);
 			Sleep(3000);
 			delimage(bg);
+			bg = NULL;
 			cleardevice();
 			put_image();
 			main_menu();
 		}
 		read2.close();
 	}
-	if (v_pak[0] == "zh")
-	{
-		MessageBox(NULL, "成功生成LRC文件和音频文件", "提示", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]成功生成音频文件" << "\n";
-	}
-	else
-	{
-		MessageBox(NULL, "Successfully generated LRC file and audio file", "Information", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]Successfully generated LRC file and audio file" << "\n";
-	}
 }
-// ASCII图像显示（包含歌词文件和音频文件）
+// 图片转字符画LRC流程
 void create_pic()
 {
-	pic_path = open_file_dialog_p();
+	pic_path = open_file_dialog_p(); // 选择图片
 	if (pic_path.empty())
 	{
-		if (v_pak[0] == "zh")
+		Log("用户未选择文件！", "User did not select any file!", true);
+		if (ShowMsg("您未选择文件,请重新选择\n选择继续生成LRC文件(是)或返回主界面(否)",
+					"You did not select any file, please re-select.\nContinue (Yes) or return (No)",
+					"错误", "Error", MB_YESNO | MB_ICONHAND) == IDYES)
 		{
-			cout << "[Error]用户未选择文件！" << "\n";
-			if (MessageBox(NULL, "您未选择文件,请重新选择\n选择继续生成LRC文件(是)或返回主界面(否)", "错误", MB_YESNO | MB_ICONHAND) == IDYES)
-			{
-				create_pic();
-			}
-			else
-			{
-				delimage(bg);
-				cleardevice();
-				put_image();
-				main_menu();
-			}
+			create_pic();
 		}
 		else
 		{
-			cout << "[Error]User did not select any file!" << "\n";
-			if (MessageBox(NULL, "You did not select any file, please re-select later.\nSelect continue to generate LRC file (Yes) or return to the main interface (No)", "Error", MB_YESNO | MB_ICONHAND) == IDYES)
-			{
-				create_pic();
-			}
-			else
-			{
-				delimage(bg);
-				cleardevice();
-				put_image();
-				main_menu();
-			}
+			delimage(bg);
+			bg = NULL;
+			cleardevice();
+			put_image();
+			main_menu();
 		}
+		return;
 	}
+
+	// 检查扩展名
 	size_t dot_pos = pic_path.find_last_of('.');
 	string ext = pic_path.substr(dot_pos);
-	transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+	transform(ext.begin(), ext.end(), ext.begin(), ::tolower); // 转小写
 	if (ext != ".jpg" && ext != ".png" && ext != ".gif" && ext != ".bmp" && ext != ".jpeg" && ext != ".tiff" && ext != ".tif" && ext != ".webp")
 	{
-		if (v_pak[0] == "zh")
+		if (ShowMsg("您选择的文件不是有效或支持的图片格式\n选择继续(是)或返回(否)",
+					"Invalid image format.\nContinue (Yes) or return (No)",
+					"错误", "Error", MB_YESNO | MB_ICONHAND) == IDYES)
 		{
-			if (MessageBox(NULL, "您选择的文件不是有效的图片格式\n选择继续生成LRC文件(是)或返回主界面(否)", "错误", MB_YESNO | MB_ICONHAND) == IDYES)
-			{
-				create_pic();
-			}
-			else
-			{
-				delimage(bg);
-				cleardevice();
-				put_image();
-				main_menu();
-			}
+			create_pic();
 		}
 		else
 		{
-			if (MessageBox(NULL, "The file you selected is not a valid image format.\nSelect continue to generate LRC file (Yes) or return to the main interface (No)", "Error", MB_YESNO | MB_ICONHAND) == IDYES)
-			{
-				create_pic();
-			}
-			else
-			{
-				delimage(bg);
-				cleardevice();
-				put_image();
-				main_menu();
-			}
+			delimage(bg);
+			bg = NULL;
+			cleardevice();
+			put_image();
+			main_menu();
 		}
+		return;
 	}
+
 	ifstream in(pic_path, ios::in);
 	if (!in.is_open())
 	{
-		if (v_pak[0] == "zh")
+		Log("文件打开失败！", "File opening failed!", true);
+		if (ShowMsg("文件打开失败,请检查是否存在此文件并重新选择\n选择继续(是)或返回(否)",
+					"File opening failed, re-select.\nContinue (Yes) or return (No)",
+					"错误", "Error", MB_YESNO | MB_ICONHAND) == IDYES)
 		{
-			cout << "[Error]文件打开失败！" << "\n";
-			MessageBox(NULL, "文件打开失败,请检查是否存在此文件并重新选择", "错误", MB_OK | MB_ICONHAND);
+			create_pic();
 		}
 		else
 		{
-			cout << "[Error]File opening failed!" << "\n";
-			if (MessageBox(NULL, "File opening failed, please check if the file exists and re-select\nSelect continue to generate LRC file (Yes) or return to the main interface (No)", "Error", MB_YESNO | MB_ICONHAND) == IDYES)
-			{
-				create_pic();
-			}
-			else
-			{
-				delimage(bg);
-				cleardevice();
-				put_image();
-				main_menu();
-			}
+			delimage(bg);
+			bg = NULL;
+			cleardevice();
+			put_image();
+			main_menu();
 		}
-		create_pic();
+		return;
 	}
+
+	// 路径标准化
 	string x = "\\";
 	string y = "/";
 	size_t pos;
 	while ((pos = pic_path.find(x)) != string::npos)
-	{
 		pic_path.replace(pos, 1, y);
-	}
-	if (v_pak[0] == "zh")
-	{
-		cout << "[Info]用户选择文件的绝对路径：" << pic_path << "\n";
-	}
-	else
-	{
-		cout << "[Info]User selected the absolute path of the file:" << pic_path << "\n";
-	}
+
+	Log("用户选择文件的绝对路径：" + pic_path, "User selected absolute path:" + pic_path);
+
 	pic_name = pic_path;
 	pic_name.erase(0, pic_name.find_last_of("/") + 1);
 	pic_name.erase(pic_name.find_last_of("."), pic_name.find_last_not_of(".txt") + 3);
-	if (v_pak[0] == "zh")
+
+	Log("用户选择文件的文件名:" + pic_name, "User selected filename:" + pic_name);
+	tp = Lang("您选择的文件绝对路径是:", "The user selected the file absolute path is:") + pic_path;
+
+	if (MessageBox(NULL, tp.c_str(), Lang("检查文件是否正确？", "Check the file is correct?").c_str(), MB_YESNO | MB_ICONASTERISK) == IDNO)
 	{
-		cout << "[Info]用户选择文件的文件名:" << pic_name << "\n";
-		tp = "您选择的文件绝对路径是:" + pic_path;
+		Log("用户主动重新选择", "User actively re-select");
+		create_pic();
+		return;
 	}
 	else
 	{
-		cout << "[Info]The user selected the name of the file:" << pic_name << "\n";
-		tp = "The user selected the file absolute path is:" + pic_path;
+		Log("文件选择成功", "File selection successful");
 	}
-	const char *c_filename = tp.c_str();
-	if (v_pak[0] == "zh")
-	{
-		if (MessageBox(NULL, c_filename, "检查文件是否正确？", MB_YESNO | MB_ICONASTERISK) == IDNO)
-		{
-			cout << "[Info]用户主动重新选择" << "\n";
-			create_pic();
-		}
-		else
-		{
-			cout << "[Info]文件选择成功" << "\n";
-		}
-		MessageBox(NULL, "现在开始转换图片文件为LRC文件和MP3文件,输出在程序文件夹的output目录下", "提示", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]开始生成歌词文件" << "\n";
-	}
-	else
-	{
-		if (MessageBox(NULL, c_filename, "Check the file is correct?", MB_YESNO | MB_ICONASTERISK) == IDNO)
-		{
-			cout << "[Info]User actively re-select" << "\n";
-			create_pic();
-		}
-		else
-		{
-			cout << "[Info]File selection successful" << "\n";
-		}
-		MessageBox(NULL, "Now start to convert the image file to LRC file and MP3 file, these files will output in the output directory of the program folder", "Information", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]Start to generate LRC file" << "\n";
-	}
+
+	ShowMsg("现在开始转换图片文件为LRC文件和MP3文件,输出在output目录下",
+			"Start to convert image to LRC and MP3, output in output directory",
+			"提示", "Information", MB_OK | MB_ICONINFORMATION);
+	Log("开始生成歌词文件", "Start to generate LRC file");
+
 	backdir();
-	string ascii = "ascii-image-converter.exe " + pic_path + " -d " + width + "," + height + " --save-txt . --only-save", ascii_out = pic_name + "-ascii-art.txt";
-	string pic_out_lrc = "output/" + pic_name + ".lrc", pic_out_mp3 = "output/" + pic_name + ".mp3";
+	// 调用 ascii-image-converter 将图片转为字符画TXT
+	string ascii = "ascii-image-converter.exe \"" + pic_path + "\" -d " + width + "," + height + " --save-txt . --only-save";
+	string ascii_out = pic_name + "-ascii-art.txt";
+	string pic_out_lrc = "output/" + pic_name + ".lrc";
+	string pic_out_mp3 = "output/" + pic_name + ".mp3";
+
 	system(ascii.c_str());
+
+	// 将字符画TXT内容读取并加上LRC时间戳（仅第一行加时间戳，后续作为同一时刻的歌词？）
 	ifstream inputFile5(ascii_out, ios::in);
 	ofstream out(pic_out_lrc, ios::out);
-	out << "[00:01.00]";
+	out << "[00:01.00]"; // 统一时间戳
 	string temp;
-	for (int i = 1; inputFile5 >> temp; i++)
+	while (getline(inputFile5, temp))
 	{
 		temp.erase(0, temp.find_first_not_of(" \t"));
-		out << temp;
+		out << temp; // 写入字符
 	}
 	inputFile5.close();
 	out.close();
-	remove(ascii_out.c_str());
+	remove(ascii_out.c_str()); // 删除中间文件
+
+	// 验证
 	ifstream op(pic_out_lrc, ios::in);
 	if (!op.is_open())
 	{
 		delall();
-		if (v_pak[0] == "zh")
-		{
-			MessageBox(NULL, "未能成功生成歌词文件\n请检查图片文件是否损坏或被删除,然后重试", "错误", MB_OK | MB_ICONERROR);
-		}
-		else
-		{
-			MessageBox(NULL, "Failed to generate LRC file\nPlease check if the image file is damaged or deleted, then retry", "Error", MB_OK | MB_ICONERROR);
-		}
+		ShowMsg("未能成功生成歌词文件\n请检查图片文件是否损坏或被删除", "Failed to generate LRC file\nPlease check image file", "错误", "Error", MB_OK | MB_ICONERROR);
 		delimage(bg);
+		bg = NULL;
 		cleardevice();
 		put_image();
 		main_menu();
+		return;
 	}
 	op.close();
-	if (v_pak[0] == "zh")
-	{
-		cout << "[Info]成功生成歌词文件" << "\n";
-		cout << "[Info]现在创建与LRC文件配套的音频文件" << "\n"
-			 << "[Info]本音频文件为静音文件,输出在程序文件夹的output目录下" << "\n"
-			 << "[Info]请不要对程序做任何操作,等待程序提示下一步" << "\n";
-		cout << "[Info]开始创建音频文件" << "\n";
-	}
-	else
-	{
-		cout << "[Info]Successfully generated LRC file" << "\n";
-		cout << "[Info]Now create audio file" << "\n"
-			 << "[Info]This audio file is a silent file,these files will output in the output directory of the program folder" << "\n"
-			 << "[Info]Do not do any operation on the program, wait for the program to prompt the next step" << "\n";
-		cout << "[Info]Start to create audio file" << "\n";
-	}
+
+	Log("成功生成歌词文件", "Successfully generated LRC file");
+	Log("现在创建与LRC文件配套的音频文件\n本音频文件为静音文件\n请不要对程序做任何操作",
+		"Now create audio file\nThis audio file is a silent file\nDo not do any operation");
+	Log("开始创建音频文件", "Start to create audio file");
+
+	// 复制静音文件作为MP3
 	ifstream read(pic_out_mp3, ios::in);
 	if (read.is_open())
 	{
-		if (v_pak[0] == "zh")
-		{
-			cout << "[Info]重复文件！现在删除原文件，创建新文件" << "\n";
-		}
-		else
-		{
-			cout << "[Info]Duplicate file! Now delete the original file and create a new file" << "\n";
-		}
+		Log("重复文件！现在删除原文件，创建新文件", "Duplicate file! Now delete original file and create new file");
 		remove(pic_out_mp3.c_str());
 	}
 	read.close();
 	string silent = "silent.mp3";
 	CopyFile(silent.c_str(), pic_out_mp3.c_str(), FALSE);
+
+	// 验证
 	ifstream op2(pic_out_mp3, ios::in);
 	if (!op2.is_open())
 	{
 		delall();
-		if (v_pak[0] == "zh")
-		{
-			MessageBox(NULL, "未能成功生成音频文件\n请检查图片文件是否损坏或被删除,然后重试", "错误", MB_OK | MB_ICONERROR);
-		}
-		else
-		{
-			MessageBox(NULL, "Failed to generate audio file\nPlease check if the image file is damaged or deleted, then retry", "Error", MB_OK | MB_ICONERROR);
-		}
+		ShowMsg("未能成功生成音频文件\n请检查图片文件是否损坏或被删除", "Failed to generate audio file\nPlease check image file", "错误", "Error", MB_OK | MB_ICONERROR);
 		delall();
 		delimage(bg);
+		bg = NULL;
+		cleardevice();
+		put_image();
+		main_menu();
+		return;
+	}
+	op2.close();
+
+	ShowMsg("成功生成LRC文件和音频文件\n现在打开output文件夹",
+			"Successfully generated LRC file and audio file\nNow open the output folder",
+			"提示", "Information", MB_OK | MB_ICONINFORMATION);
+
+	Log("成功生成音频文件", "Successfully generated audio file");
+	Log("打开output文件夹", "Open the output folder");
+	system("start output");
+	Log("生成完成，选择是否继续生成", "Generation complete, ask user continue or back to main menu");
+
+	if (ShowMsg("选择继续生成LRC文件(是)或返回主菜单(否)",
+				"Do you want to continue generating LRC files?\nChoose 'Yes' continue, choose 'No' back.",
+				"选择", "Choose", MB_YESNO | MB_ICONASTERISK) == IDYES)
+	{
+		create_pic();
+	}
+	else
+	{
+		delimage(bg);
+		bg = NULL;
 		cleardevice();
 		put_image();
 		main_menu();
 	}
-	op2.close();
-	if (v_pak[0] == "zh")
-	{
-		MessageBox(NULL, "成功生成LRC文件和音频文件", "提示", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]成功生成音频文件" << "\n";
-		MessageBox(NULL, "现在打开output文件夹\n请连接学习机/词典笔等音乐播放器，打开其对应音乐文件夹，将程序生成的音乐和歌词文件剪切至其中\n具体操作可观看软件作者B站视频", "提示", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]打开output文件夹" << "\n";
-		system("start output");
-		Sleep(5000);
-		cout << "[Info]生成完成，选择是否继续生成" << "\n";
-		if (MessageBox(NULL, "选择继续生成LRC文件(是)或返回主菜单(否)", "选择", MB_YESNO | MB_ICONASTERISK) == IDYES)
-		{
-			create_pic();
-		}
-		else
-		{
-			delimage(bg);
-			cleardevice();
-			put_image();
-			main_menu();
-		}
-	}
-	else
-	{
-		MessageBox(NULL, "Successfully generated LRC file and audio file", "Information", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]Successfully generated LRC file" << "\n";
-		MessageBox(NULL, "Now open the output folder\nPlease connect the learning machine/dictionary pen etc. music player, open its corresponding music folder, and cut the program generated music and LRC file to it\nFor specific operation, please watch the software author's Youtube video", "Information", MB_OK | MB_ICONINFORMATION);
-		cout << "[Info]Open the output folder" << "\n";
-		system("start output");
-		Sleep(5000);
-		cout << "[Info]Generation complete, ask user continue or back to main menu" << "\n";
-		if (MessageBox(NULL, "Do you want to continue generating LRC files?\nChoose \"Yes\" continue create file,choose \"No\" back to the main menu.", "Choose", MB_YESNO | MB_ICONASTERISK) == IDYES)
-		{
-			create_pic();
-		}
-		else
-		{
-			delimage(bg);
-			cleardevice();
-			put_image();
-			main_menu();
-		}
-	}
 }
-// 删除出错文件
+// 删除 output 目录下的所有文件
 void delall()
 {
 	backdir();
 	string rm = "del /q output\\*";
 	system(rm.c_str());
 }
-// 选择设置项
+// 设置菜单逻辑
 void setting_opinion()
 {
+	// 绘制标题
 	setcolor(WHITE);
 	setbkmode(TRANSPARENT);
 	setfont(32, 0, "宋体");
 	setcolor(BLUE);
-	outtextxy(200, 110, "设置(Settings)");
+	outtextxy(200, 110, Lang("设置(Settings)", "Settings").c_str());
 	setcolor(WHITE);
 	setfont(16, 0, "宋体");
-	outtextxy(53, 170, "设置程序语言(Set Program Language)");
-	outtextxy(53, 290, "设置LRC文件编码(Set Output Encoding)");
+	outtextxy(53, 170, Lang("设置程序语言(Set Program Language)", "Set Program Language").c_str());
+	outtextxy(53, 290, Lang("设置LRC文件编码(Set Output Encoding)", "Set Output Encoding").c_str());
+
 	bool choosechinese = false, chooseenglish = false, chooseansi = false, chooseutf_8 = false, chooseback = false;
 	bool redraw2 = true;
+	// 事件循环
 	for (; is_run(); delay_fps(60))
 	{
 		while (mousemsg())
 		{
 			mouse_msg msg2 = getmouse();
-			// 判断鼠标左键点击（左键按下确定位置，抬起为执行时刻）
 			if (msg2.is_left())
 			{
 				if (msg2.is_down())
 				{
-					// 检测点击的按钮
+					// 检测点击
 					choosechinese = insideRectButton(&chinese, msg2.x, msg2.y);
 					chooseenglish = insideRectButton(&english, msg2.x, msg2.y);
 					chooseansi = insideRectButton(&ansi, msg2.x, msg2.y);
@@ -1900,29 +1325,27 @@ void setting_opinion()
 				else
 				{
 					backdir();
+					// 配置文件防篡改检查
 					if (v_pak[0] != "zh" && v_pak[0] != "en")
 					{
 						v_pak[0] = "zh";
-						cout << "[Error]main.pak被错误修改，语言重新调整为中文！" << "\n";
+						Log("main.pak被错误修改，语言重新调整为中文！", "main.pak modified error, reset to Chinese.", true);
 						ofstream reset_la("main.pak", ios::out);
 						for (int i = 0; i < 2; i++)
-						{
 							reset_la << v_pak[i] << "\n";
-						}
 						reset_la.close();
 					}
 					if (v_pak[1] != "ANSI" && v_pak[1] != "UTF_8")
 					{
 						v_pak[1] = "ANSI";
-						cout << "[Error]main.pak被错误修改，编码重新调整为ANSI！" << "\n";
+						Log("main.pak被错误修改，编码重新调整为ANSI！", "main.pak modified error, reset to ANSI.", true);
 						ofstream reset_en("main.pak", ios::out);
 						for (int i = 0; i < 2; i++)
-						{
 							reset_en << v_pak[i] << "\n";
-						}
 						reset_en.close();
 					}
-					// 左键抬起，判断是否需要执行事件响应
+
+					// 执行设置修改
 					if (choosechinese)
 					{
 						choosechinese = false;
@@ -1956,245 +1379,142 @@ void setting_opinion()
 						chooseback = false;
 						redraw2 = true;
 						delimage(bg);
+						bg = NULL;
 						cleardevice();
 						put_image();
-						main_menu();
+						main_menu(); // 返回主菜单
 					}
 				}
 			}
 		}
-		// 绘制
 		if (redraw2)
 		{
-			draw2();
+			draw2(); // 重绘设置界面
 			redraw2 = false;
 		}
 	}
 }
-// 设置语言并保存至main.pak
+// 更改语言逻辑
 void set_language()
 {
 	if (v_pak[0] == language)
 	{
-		if (v_pak[0] == "zh")
-		{
-			MessageBox(NULL, "您选择的语言与之前重复，请重新选择", "提示", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-		}
-		else
-		{
-			MessageBox(NULL, "The language you have selected is same as the previous one,please choose again.", "Information", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-		}
+		ShowMsg("您选择的语言与之前重复，请重新选择",
+				"The language you have selected is same as the previous one, please choose again.",
+				"提示", "Information", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
 	}
 	else
 	{
-		if (language == "zh")
-		{
-			v_pak[0] = "zh";
-		}
-		else
-		{
-			v_pak[0] = "en";
-		}
+		v_pak[0] = (language == "zh") ? "zh" : "en";
+
+		// 写入配置文件
 		ofstream set_la("main.pak", ios::out);
 		for (int i = 0; i < 2; i++)
-		{
 			set_la << v_pak[i] << "\n";
-		}
 		set_la.close();
-		system("cls");
+		system("cls"); // 清空控制台
+
+		// 重印头部信息
 		if (v_pak[0] == "zh")
 		{
-			cout << "LRC阅读器 v3.0" << "\n"
-				 << "\n";
-			cout << "作者B站:武侠Tux,作者Github:WuXiaTux" << "\n"
-				 << "\n";
-			cout << "感谢您使用本程序,敬请关注!" << "\n"
-				 << "\n";
-			cout << "本程序完全免费开源,请勿进行倒卖传播,如果您花钱购买此软件,请您立即退款并举报" << "\n"
-				 << "\n";
-			cout << "官方开源地址:https://github.com/WuXiaTux/LRC_Reader" << "\n"
-				 << "\n";
-			cout << "官方下载地址:https://kali-linux.lanzn.com/b00pzrssfa 密码:wuxiatux" << "\n"
-				 << "\n"
-				 << "\n";
-			cout << "以下为程序日志输出" << "\n";
-			cout << "[Info]语言成功设定为中文" << "\n";
-			cout << "[Info]当前语言为中文，" << "当前LRC文件编码为" << v_pak[1] << "\n";
-			MessageBox(NULL, "语言成功设定为中文", "提示", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+			cout << "LRC阅读器 v3.0.1\n\n";
+			cout << "作者B站:武侠Tux,作者Github:WuXiaTux\n\n";
+			cout << "感谢您使用本程序,敬请关注!\n\n";
+			cout << "本程序完全免费开源,请勿进行倒卖传播,如果您花钱购买此软件,请您立即退款并举报\n\n";
+			cout << "官方开源地址:https://github.com/WuXiaTux/LRC_Reader\n\n";
+			cout << "官方下载地址:https://kali-linux.lanzn.com/b00pzrssfa 密码:wuxiatux\n\n\n";
+			cout << "以下为程序日志输出\n";
 		}
 		else
 		{
-			cout << "LRC Reader v3.0" << "\n"
-				 << "\n";
-			cout << "Author Bilibili:WuXiaTux,Author Github:WuXiaTux" << "\n"
-				 << "\n";
-			cout << "Thank you for using this program, please follow&star!" << "\n"
-				 << "\n";
-			cout << "This program is completely free and open source, please don't sell it.if you pay for this software,please refund and report the seller immediately." << "\n"
-				 << "\n";
-			cout << "Official open source address:https://github.com/WuXiaTux/LRC_Reader" << "\n"
-				 << "\n";
-			cout << "Official download address:https://kali-linux.lanzn.com/b00pzrssfa password:wuxiatux" << "\n"
-				 << "\n"
-				 << "\n";
-			cout << "Program log output" << "\n";
-			cout << "[Info]Language successfully set to English" << "\n";
-			cout << "[Info]Current language is English, " << "Current LRC file encoding is " << v_pak[1] << "\n";
-			MessageBox(NULL, "Language successfully set to English", "Information", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+			cout << "LRC Reader v3.0.1\n\n";
+			cout << "Author Bilibili:WuXiaTux,Author Github:WuXiaTux\n\n";
+			cout << "Thank you for using this program,please follow&star!\n\n";
+			cout << "This program is completely free and open source,please don't sell it.if you pay for this software,please refund and report the seller immediately.\n\n";
+			cout << "Official open source address:https://github.com/WuXiaTux/LRC_Reader\n\n";
+			cout << "Official download address:https://kali-linux.lanzn.com/b00pzrssfa password:wuxiatux\n\n\n";
+			cout << "Program log output\n";
 		}
+
+		Log("语言成功设定为" + string(v_pak[0] == "zh" ? "中文" : "English"),
+			"Language successfully set to " + string(v_pak[0] == "zh" ? "Chinese" : "English"));
+		Log("当前语言为" + string(v_pak[0] == "zh" ? "中文" : "English") + "，当前LRC文件编码为" + v_pak[1],
+			"Current language is " + string(v_pak[0] == "zh" ? "Chinese" : "English") + ", Current LRC file encoding is " + v_pak[1]);
+
+		ShowMsg("语言成功设定为" + string(v_pak[0] == "zh" ? "中文" : "English"),
+				"Language successfully set to " + string(v_pak[0] == "zh" ? "Chinese" : "English"),
+				"提示", "Information", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
 	}
 }
-// 设置编码并保存至main.pak
+// 更改编码逻辑
 void set_encoding()
 {
 	if (v_pak[1] == encoding)
 	{
-		if (v_pak[0] == "zh")
-		{
-			MessageBox(NULL, "您选择的编码与之前重复，请重新选择", "提示", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-		}
-		else
-		{
-			MessageBox(NULL, "The encoding you have selected is same as the previous one,please choose again.", "Information", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-		}
+		ShowMsg("您选择的编码与之前重复，请重新选择",
+				"The encoding you have selected is same as the previous one, please choose again.",
+				"提示", "Information", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
 	}
 	else
 	{
-		if (encoding == "ANSI")
-		{
-			v_pak[1] = "ANSI";
-		}
-		else
-		{
-			v_pak[1] = "UTF_8";
-		}
+		v_pak[1] = (encoding == "ANSI") ? "ANSI" : "UTF_8";
+
+		// 写入配置文件
 		ofstream set_en("main.pak", ios::out);
 		for (int i = 0; i < 2; i++)
-		{
 			set_en << v_pak[i] << "\n";
-		}
 		set_en.close();
-		if (encoding == "ANSI")
-		{
-			if (v_pak[0] == "zh")
-			{
-				cout << "[Info]编码成功设置为" << encoding << "\n";
-				MessageBox(NULL, "编码成功设置为ANSI", "提示", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-			}
-			else
-			{
-				cout << "[Info]Encoding successfully set to " << encoding << "\n";
-				MessageBox(NULL, "Encoding successfully set to ANSI", "Information", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-			}
-		}
-		else
-		{
-			if (v_pak[0] == "zh")
-			{
-				cout << "[Info]编码成功设置为" << encoding << "\n";
-				MessageBox(NULL, "编码成功设置为UTF-8", "提示", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-			}
-			else
-			{
-				cout << "[Info]Encoding successfully set to " << encoding << "\n";
-				MessageBox(NULL, "Encoding successfully set to UTF-8", "Information", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
-			}
-		}
-		if (v_pak[0] == "zh")
-		{
-			cout << "[Info]当前语言为中文，" << "当前LRC文件编码为" << v_pak[1] << "\n";
-		}
-		else
-		{
-			cout << "[Info]Current language is English, " << "Current LRC file encoding is " << v_pak[1] << "\n";
-		}
+
+		string encName = (encoding == "ANSI") ? "ANSI" : "UTF-8";
+		Log("编码成功设置为" + encName, "Encoding successfully set to " + encName);
+		ShowMsg("编码成功设置为" + encName, "Encoding successfully set to " + encName,
+				"提示", "Information", MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
+
+		Log("当前语言为" + string(v_pak[0] == "zh" ? "中文" : "English") + "，当前LRC文件编码为" + v_pak[1],
+			"Current language is " + string(v_pak[0] == "zh" ? "Chinese" : "English") + ", Current LRC file encoding is " + v_pak[1]);
 	}
 }
-// 用于在create_pic()时输入播放器的宽和高
+// 获取字符画尺寸输入
 void enter_width_height()
 {
-	if (v_pak[0] == "zh")
-	{
-		cout << "[Info]请输入播放器显示的长和宽，输入示例：宽x高(中间的x是小写的英文字母x)：" << "\n";
-	}
-	else
-	{
-		cout << "[Info]Please enter the length and width displayed by the player.Ex: widthxheight(the middle \"x\" is a lowercase English letter \"X\".)" << "\n";
-	}
+	Log("请输入播放器显示的长和宽，输入示例：宽x高(中间的x是小写的英文字母x)：",
+		"Please enter the length and width displayed by the player.Ex: widthxheight");
+
 	getline(cin, width_height);
 	int x_tmp = width_height.find("x");
+
+	// 简单验证格式：必须包含 'x' 且两边都是数字
+	bool valid = true;
 	if (x_tmp == -1)
+		valid = false;
+	else
 	{
-		if (v_pak[0] == "zh")
-		{
-			cout << "[Error]您未输入正确的格式，请重新输入" << "\n";
-			MessageBox(NULL, "您未输入正确的格式，请重新输入", "错误", MB_OK | MB_ICONERROR);
-		}
-		else
-		{
-			cout << "[Error]You did not enter the width and height in the correct format, please re-enter" << "\n";
-			MessageBox(NULL, "You did not enter the width and height in the correct format, please re-enter", "Error", MB_OK | MB_ICONERROR);
-		}
-		enter_width_height();
+		width = width_height.substr(0, x_tmp);
+		height = width_height.substr(x_tmp + 1);
+		if (width.empty() || height.empty())
+			valid = false;
+		// 检查数字
+		for (char c : width)
+			if (!isdigit(c))
+				valid = false;
+		for (char c : height)
+			if (!isdigit(c))
+				valid = false;
 	}
-	width = width_height.substr(0, x_tmp);
-	height = width_height.substr(x_tmp + 1, width_height.size());
-	if (width.size() == 0 || height.size() == 0)
+
+	if (!valid)
 	{
-		if (v_pak[0] == "zh")
-		{
-			cout << "[Error]您未输入数字，请重新输入" << "\n";
-			MessageBox(NULL, "您未输入数字，请重新输入", "错误", MB_OK | MB_ICONERROR);
-		}
-		else
-		{
-			cout << "[Error]You did not enter any number, please re-enter" << "\n";
-			MessageBox(NULL, "You did not enter any number, please re-enter", "Error", MB_OK | MB_ICONERROR);
-		}
-		enter_width_height();
+		Log("您未输入正确的格式/数字，请重新输入", "Invalid format/number, please re-enter", true);
+		ShowMsg("您未输入正确的格式，请重新输入", "Invalid format, please re-enter", "错误", "Error", MB_OK | MB_ICONERROR);
+		enter_width_height(); // 递归重试
 	}
-	for (int i = 0; i < width.size(); i++)
-	{
-		int width_tmp = (int)width[i];
-		if (width_tmp >= 48 && width_tmp <= 57)
-		{
-			continue;
-		}
-		else
-		{
-			if (v_pak[0] == "zh")
-			{
-				cout << "[Error]您未输入正确的格式，请重新输入" << "\n";
-				MessageBox(NULL, "您未输入正确的格式，请重新输入", "错误", MB_OK | MB_ICONERROR);
-			}
-			else
-			{
-				cout << "[Error]You did not enter the width and height in the correct format, please re-enter" << "\n";
-				MessageBox(NULL, "You did not enter the width and height in the correct format, please re-enter", "Error", MB_OK | MB_ICONERROR);
-			}
-			enter_width_height();
-		}
-	}
-	for (int i = 0; i < height.size(); i++)
-	{
-		int height_tmp = (int)height[i];
-		if (height_tmp >= 48 && height_tmp <= 57)
-		{
-			continue;
-		}
-		else
-		{
-			if (v_pak[0] == "zh")
-			{
-				cout << "[Error]您未输入正确的格式，请重新输入" << "\n";
-				MessageBox(NULL, "您未输入正确的格式，请重新输入", "错误", MB_OK | MB_ICONERROR);
-			}
-			else
-			{
-				cout << "[Error]You did not enter the width and height in the correct format, please re-enter" << "\n";
-				MessageBox(NULL, "You did not enter the width and height in the correct format, please re-enter", "Error", MB_OK | MB_ICONERROR);
-			}
-			enter_width_height();
-		}
-	}
+}
+// 格式化秒数为 LRC 时间戳字符串 [MM:SS.00]
+string format_timestamp(int seconds)
+{
+	std::ostringstream oss;
+	oss << "[" << std::setw(2) << std::setfill('0') << (seconds / 60) // 分
+		<< ":" << std::setw(2) << std::setfill('0') << (seconds % 60) // 秒
+		<< ".00]"; // 毫秒固定为00
+	return oss.str();
 }
